@@ -1,0 +1,32 @@
+name: Daily DQX ES sync
+
+on:
+  schedule:
+    # 08:00 UTC daily -- adjust to whenever your PC is reliably on.
+    # (Chile is UTC-3/UTC-4 depending on DST, so this is roughly 04-05 AM local.
+    #  Change the cron if you'd rather it run at a time you're actually awake
+    #  to check the review CSV.)
+    - cron: "0 8 * * *"
+  workflow_dispatch: {}   # lets you trigger it manually from the Actions tab too
+
+jobs:
+  sync:
+    runs-on: self-hosted   # your own PC, registered as a runner for this repo
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run pipeline (tramos A + B)
+        shell: pwsh
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: ./run_daily_pipeline.ps1
+
+      - name: Upload review CSV (if any JA changed) and ETP-ready JSON as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dqx-es-sync-${{ github.run_id }}
+          path: |
+            logs/*.csv
+            etp_output/es_ready_json/**
+          if-no-files-found: ignore
