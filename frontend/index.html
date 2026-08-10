@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>DQX - Traduccion ES</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --border: #d8d5cc;
+    --border-strong: #b3afa3;
+    --bg: #ffffff;
+    --bg-alt: #f6f4ef;
+    --text: #1c1b19;
+    --text-muted: #706c62;
+    --warn: #b5480a;
+    --warn-bg: #fbe9dd;
+    --ok: #2f6d3a;
+    --ok-bg: #e4f1e5;
+    --accent: #2457a8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    background: var(--bg-alt);
+    color: var(--text);
+    font-size: 13px;
+  }
+  header {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  header input, header select, button {
+    font-size: 13px;
+    padding: 6px 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  button {
+    cursor: pointer;
+  }
+  button:hover { background: var(--bg-alt); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover { background: #1d4785; }
+  #search { flex: 1; min-width: 200px; }
+  #fileSelect { min-width: 260px; }
+  .spacer { flex: 1; }
+  .status-pill {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+  .status-pendiente { background: var(--bg-alt); color: var(--text-muted); }
+  .status-traducido { background: var(--ok-bg); color: var(--ok); }
+  .status-revisado { background: #dde7f5; color: var(--accent); }
+
+  main { padding: 12px 16px 60px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--bg); }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px;
+    vertical-align: top;
+    text-align: left;
+  }
+  th {
+    background: var(--bg-alt);
+    font-weight: 500;
+    position: sticky;
+    top: 49px;
+  }
+  td.ref { color: var(--text-muted); white-space: pre-wrap; max-width: 260px; }
+  td.es-cell { min-width: 260px; }
+  textarea.es-input {
+    width: 100%;
+    min-height: 70px;
+    font-size: 13px;
+    padding: 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    resize: vertical;
+    font-family: inherit;
+  }
+  .line-stats { margin-top: 4px; font-size: 11px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .line-stats .over { color: var(--warn); font-weight: 600; }
+  .line-stats .page-sep { width: 100%; border-top: 1px dashed var(--border-strong); margin: 3px 0; padding-top: 3px; color: var(--text-muted); }
+  .row-actions { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .save-msg { font-size: 11px; color: var(--ok); }
+
+  #rules {
+    background: var(--warn-bg);
+    border: 1px solid #e3b088;
+    color: var(--warn);
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  #rules b { display: block; margin-bottom: 4px; }
+
+  #replacePanel {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  #replacePanel.open { display: block; }
+  .match-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .match-row .meta { font-size: 11px; color: var(--text-muted); }
+  mark { background: #fce8b8; padding: 0 2px; }
+
+  #pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
+  #loadingMsg { color: var(--text-muted); padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <input id="search" type="text" placeholder="Buscar en JA, EN y ES..." />
+  <select id="fileSelect"><option value="">Todos los archivos</option></select>
+  <select id="statusSelect">
+    <option value="">Estado: todos</option>
+    <option value="pendiente">Pendiente</option>
+    <option value="traducido">Traducido</option>
+    <option value="revisado">Revisado</option>
+  </select>
+  <div class="spacer"></div>
+  <button id="toggleReplace">Buscar y reemplazar</button>
+  <span id="userLabel" style="font-size:12px; color:var(--text-muted);"></span>
+</header>
+
+<main>
+  <div id="rules">
+    <b>Reglas de traduccion al espanol</b>
+    Sin enye (n en vez de n con tilde) y sin vocales acentuadas (a e i o u sin tilde) -- el motor del
+    juego no las lee bien y puede llegar a crashear. Escribe todo en espanol neutro sin acentos ni enye.
+  </div>
+
+  <div id="replacePanel">
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <input id="replaceSearch" type="text" placeholder="Termino a buscar (JA, EN o ES)" style="flex:1;" />
+      <button id="runReplaceSearch">Buscar coincidencias</button>
+    </div>
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <input id="replaceWith" type="text" placeholder="Reemplazar ES por..." style="flex:1;" />
+      <button id="applyReplace" class="primary">Aplicar a seleccionadas</button>
+    </div>
+    <div id="replaceResults"></div>
+  </div>
+
+  <div id="loadingMsg">Cargando...</div>
+  <table id="mainTable" style="display:none;">
+    <thead>
+      <tr>
+        <th style="width:70px;">ID</th>
+        <th style="width:22%;">JA (referencia)</th>
+        <th style="width:22%;">EN (referencia)</th>
+        <th>ES (editable)</th>
+        <th style="width:110px;">Estado</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div id="pager">
+    <button id="prevPage">Anterior</button>
+    <span id="pageLabel"></span>
+    <button id="nextPage">Siguiente</button>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// --- 1. Fill these in with your own Supabase project details ---
+const SUPABASE_URL = "https://nchdmvlabsgozmyvjspb.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jaGRtdmxhYnNnb3pteXZqc3BiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzcyMDIsImV4cCI6MjEwMTI1MzIwMn0.tKyEA6TWELpKn7ngYrwObmX1cICLgaiqt4-ym6c01CA";
+// -----------------------------------------------------------------
+
+const supabase_cli = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const PAGE_SIZE = 25;
+const MAX_LINE_CHARS = 46;
+let currentPage = 0;
+let currentUser = localStorage_safe_prompt();
+
+function localStorage_safe_prompt() {
+  // No persistent storage used; just ask once per browser session.
+  const name = window.prompt("Tu nombre o apodo (para registrar quien tradujo cada linea):", "");
+  document.getElementById("userLabel").textContent = name ? ("Editando como: " + name) : "";
+  return name || "anonimo";
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function escapeHtml(s) {
+  return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function renderLineStats(container, text) {
+  const lines = text.split("\n");
+  const pages = [[]];
+  lines.forEach(line => {
+    if (line.trim() === "<br>") { pages.push([]); }
+    else { pages[pages.length - 1].push(line); }
+  });
+  let html = "";
+  pages.forEach((page, pIdx) => {
+    if (pIdx > 0) html += `<div class="page-sep">Pagina ${pIdx + 1} (tras &lt;br&gt;)</div>`;
+    page.forEach((line, lIdx) => {
+      const count = line.length;
+      const over = count > MAX_LINE_CHARS;
+      html += `<span class="${over ? "over" : ""}">Linea ${lIdx + 1}: ${count}/${MAX_LINE_CHARS}</span>`;
+    });
+  });
+  html += `<span style="color:var(--text-muted);">Total bruto: ${text.length}</span>`;
+  container.innerHTML = html;
+}
+
+async function loadFileOptions() {
+  const { data, error } = await supabase_cli.from("file_list").select("file, entry_count");
+  if (error) { console.error(error); return; }
+  const select = document.getElementById("fileSelect");
+  data.forEach(row => {
+    const opt = document.createElement("option");
+    opt.value = row.file;
+    opt.textContent = `${row.file} (${row.entry_count})`;
+    select.appendChild(opt);
+  });
+}
+
+function buildQuery() {
+  let query = supabase_cli.from("entries").select("id, file, entry_id, ja, en, es, status");
+
+  const fileVal = document.getElementById("fileSelect").value;
+  if (fileVal) query = query.eq("file", fileVal);
+
+  const statusVal = document.getElementById("statusSelect").value;
+  if (statusVal) query = query.eq("status", statusVal);
+
+  const searchVal = document.getElementById("search").value.trim();
+  if (searchVal) {
+    const term = searchVal.replace(/[%_]/g, "");
+    query = query.or(`ja.ilike.%${term}%,en.ilike.%${term}%,es.ilike.%${term}%`);
+  }
+
+  return query.order("file", { ascending: true }).order("entry_id", { ascending: true });
+}
+
+async function loadPage() {
+  document.getElementById("loadingMsg").style.display = "block";
+  document.getElementById("mainTable").style.display = "none";
+
+  const from = currentPage * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+  const { data, error } = await buildQuery().range(from, to);
+
+  document.getElementById("loadingMsg").style.display = "none";
+  document.getElementById("mainTable").style.display = "table";
+
+  if (error) { console.error(error); return; }
+
+  renderRows(data);
+  document.getElementById("pageLabel").textContent = `Pagina ${currentPage + 1}`;
+  document.getElementById("prevPage").disabled = currentPage === 0;
+  document.getElementById("nextPage").disabled = data.length < PAGE_SIZE;
+}
+
+function renderRows(rows) {
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  rows.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.entry_id}<br><span style="color:var(--text-muted); font-size:10px;">${row.file}</span></td>
+      <td class="ref">${escapeHtml(row.ja)}</td>
+      <td class="ref">${escapeHtml(row.en)}</td>
+      <td class="es-cell">
+        <textarea class="es-input">${escapeHtml(row.es)}</textarea>
+        <div class="line-stats"></div>
+        <div class="row-actions">
+          <button class="save-btn primary">Guardar</button>
+          <span class="save-msg"></span>
+        </div>
+      </td>
+      <td>
+        <select class="status-select">
+          <option value="pendiente" ${row.status === "pendiente" ? "selected" : ""}>Pendiente</option>
+          <option value="traducido" ${row.status === "traducido" ? "selected" : ""}>Traducido</option>
+          <option value="revisado" ${row.status === "revisado" ? "selected" : ""}>Revisado</option>
+        </select>
+      </td>
+    `;
+
+    const textarea = tr.querySelector(".es-input");
+    const statsDiv = tr.querySelector(".line-stats");
+    renderLineStats(statsDiv, textarea.value);
+    textarea.addEventListener("input", () => renderLineStats(statsDiv, textarea.value));
+
+    const saveBtn = tr.querySelector(".save-btn");
+    const saveMsg = tr.querySelector(".save-msg");
+    const statusSelect = tr.querySelector(".status-select");
+
+    saveBtn.addEventListener("click", async () => {
+      saveBtn.disabled = true;
+      saveMsg.textContent = "Guardando...";
+      const { error } = await supabase_cli.from("entries").update({
+        es: textarea.value,
+        status: statusSelect.value,
+        updated_by: currentUser,
+        updated_at: new Date().toISOString(),
+      }).eq("file", row.file).eq("entry_id", row.entry_id);
+
+      saveBtn.disabled = false;
+      saveMsg.textContent = error ? "Error al guardar" : "Guardado";
+      setTimeout(() => { saveMsg.textContent = ""; }, 2500);
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+
+// --- Search / replace panel ---
+document.getElementById("toggleReplace").addEventListener("click", () => {
+  document.getElementById("replacePanel").classList.toggle("open");
+});
+
+document.getElementById("runReplaceSearch").addEventListener("click", async () => {
+  const term = document.getElementById("replaceSearch").value.trim();
+  const container = document.getElementById("replaceResults");
+  if (!term) { container.innerHTML = ""; return; }
+
+  container.innerHTML = "Buscando...";
+  const cleanTerm = term.replace(/[%_]/g, "");
+  const { data, error } = await supabase_cli.from("entries")
+    .select("file, entry_id, ja, en, es")
+    .or(`ja.ilike.%${cleanTerm}%,en.ilike.%${cleanTerm}%,es.ilike.%${cleanTerm}%`)
+    .limit(100);
+
+  if (error) { container.innerHTML = "Error en la busqueda."; console.error(error); return; }
+
+  if (data.length === 0) { container.innerHTML = "Sin coincidencias."; return; }
+
+  const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  const highlight = (s) => escapeHtml(s).replace(re, m => `<mark>${m}</mark>`);
+
+  container.innerHTML = `<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">${data.length} coincidencias (maximo 100 mostradas)</div>`;
+  data.forEach((row, idx) => {
+    const hasEs = row.es && row.es.trim().length > 0;
+    const div = document.createElement("div");
+    div.className = "match-row";
+    div.innerHTML = `
+      <input type="checkbox" ${hasEs ? "checked" : ""} ${hasEs ? "" : "disabled"} data-idx="${idx}" />
+      <div style="flex:1;">
+        <div class="meta">${row.file} - ID ${row.entry_id}</div>
+        <div>EN: ${highlight(row.en)}</div>
+        <div>ES actual: ${hasEs ? highlight(row.es) : '<em style="color:var(--text-muted);">sin traducir</em>'}</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  container.dataset.matches = JSON.stringify(data);
+});
+
+document.getElementById("applyReplace").addEventListener("click", async () => {
+  const container = document.getElementById("replaceResults");
+  const term = document.getElementById("replaceSearch").value.trim();
+  const replacement = document.getElementById("replaceWith").value;
+  if (!term || !container.dataset.matches) return;
+
+  const matches = JSON.parse(container.dataset.matches);
+  const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
+  const re = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+
+  let applied = 0;
+  for (const cb of checkboxes) {
+    const row = matches[parseInt(cb.dataset.idx, 10)];
+    if (!row.es) continue;
+    const newEs = row.es.replace(re, replacement);
+    const { error } = await supabase_cli.from("entries").update({
+      es: newEs,
+      updated_by: currentUser,
+      updated_at: new Date().toISOString(),
+    }).eq("file", row.file).eq("entry_id", row.entry_id);
+    if (!error) applied++;
+  }
+
+  container.innerHTML = `Listo: ${applied} filas actualizadas.`;
+  loadPage();
+});
+
+// --- Filters / pagination wiring ---
+document.getElementById("search").addEventListener("input", debounce(() => { currentPage = 0; loadPage(); }, 400));
+document.getElementById("fileSelect").addEventListener("change", () => { currentPage = 0; loadPage(); });
+document.getElementById("statusSelect").addEventListener("change", () => { currentPage = 0; loadPage(); });
+document.getElementById("prevPage").addEventListener("click", () => { if (currentPage > 0) { currentPage--; loadPage(); } });
+document.getElementById("nextPage").addEventListener("click", () => { currentPage++; loadPage(); });
+
+loadFileOptions();
+loadPage();
+</script>
+</body>
+</html>
