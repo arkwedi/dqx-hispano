@@ -1,15 +1,25 @@
-name: run_export.yml
+name: Ejecutar script de Python
 
 on:
   push:
-    branches: [main] # Se ejecuta cuando haces push a la rama main
+    branches: [ main ]
+  workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions en GitHub
 
 jobs:
-  run-script:
-    runs-on: ubuntu-latest # Define la máquina virtual
+  run-python:
+    runs-on: ubuntu-latest
     steps:
       - name: Descargar código del repositorio
-        uses: actions/checkout@v4 # Clona tu repositorio en el entorno
+        uses: actions/checkout@v4
 
-      - name: Ejecutar el script (ejemplo con Bash o Python)
-        run: bash mi-script.sh # Cambia esto por el comando para tu script (ej. python mi-script.py)
+      - name: Configurar entorno de Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # O la versión que necesites
+
+      - name: Instalar dependencias (opcional)
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Ejecutar script de Python
+        run: /scripts/python export_translations.py # Reemplaza con la ruta de tu archivo, ej: src/script.py
