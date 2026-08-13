@@ -1,0 +1,15 @@
+name: run_export.yml
+
+on:
+  push:
+    branches: [main] # Se ejecuta cuando haces push a la rama main
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest # Define la máquina virtual
+    steps:
+      - name: Descargar código del repositorio
+        uses: actions/checkout@v4 # Clona tu repositorio en el entorno
+
+      - name: Ejecutar el script (ejemplo con Bash o Python)
+        run: bash mi-script.sh # Cambia esto por el comando para tu script (ej. python mi-script.py)
