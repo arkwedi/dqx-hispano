@@ -15,6 +15,7 @@ permissions:
 jobs:
   sync:
     runs-on: self-hosted   # your own PC, registered as a runner for this repo
+    environment: DATABASE_URL    # <--- AGREGA ESTA LÍNEA AQUÍ
     steps:
       - uses: actions/checkout@v4
 
