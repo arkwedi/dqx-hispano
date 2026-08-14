@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run pipeline (etp.exe -> Supabase -> ETP -> common.zip)
-        shell: pwsh
+        shell: powershell
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ETP_EXE_PATH: ${{ vars.ETP_EXE_PATH }}
