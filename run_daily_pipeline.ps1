@@ -51,7 +51,7 @@ if (Test-Path $envFile) {
 $EtpExe             = $env:ETP_EXE_PATH        # ej: "C:\Tools\ETPLocalizer\etp.exe"
 $EtpWorkDir         = $env:ETP_WORK_DIR        # carpeta donde corres etp.exe (aqui aparecen common/, etp/, json/, rps/)
 $LocalDb            = ".\translations.db"
-$ExportStaging      = ".\etp_output\es_staging"   # export_translations.py escribe aqui, plano (un .json por archivo)
+$ExportStaging      = $env:ETP_WORK_DIR&"\json\_lang\en"   # export_translations.py escribe aqui, plano (un .json por archivo)
 $ChangedReviewCsv   = ".\logs\ja_changed_$(Get-Date -Format yyyy-MM-dd).csv"
 $BackupCsv          = ".\backups\backup_$(Get-Date -Format yyyy-MM-dd).csv"
 $ClarityGlossaryDb  = $env:CLARITY_GLOSSARY_DB_PATH   # ej: "C:\dqxclarity\misc_files\glossary.db"
@@ -129,18 +129,24 @@ if ($LASTEXITCODE -ne 0) { Write-Error "export_translations.py fallo"; exit 1 }
 # Los reescribimos en su ubicacion ORIGINAL real (usando el mapa armado mas
 # arriba), para que etp.exe rebuild encuentre cada uno donde corresponde,
 # sin importar que tan anidada este la carpeta json/ internamente.
+# --- Paso 5 (Sección de copiado corregida) ---
 $copiedCount = 0
 $missingCount = 0
+
 Get-ChildItem $ExportStaging -Filter *.json | ForEach-Object {
     if ($jsonFileMap.ContainsKey($_.BaseName)) {
-        Copy-Item $_.FullName $jsonFileMap[$_.BaseName] -Force
+        $destinationPath = $jsonFileMap[$_.BaseName]
+        Copy-Item $_.FullName -Destination $destinationPath -Force
         $copiedCount++
     } else {
-        Write-Warning "No se encontro ubicacion original para $($_.Name); no se copio."
+        # Si por alguna razón no estaba en el mapa, forzamos la copia directa a la carpeta json de ETPWorkDir
+        $fallbackPath = Join-Path $EtpWorkDir "json\$($_.Name)"
+        Copy-Item $_.FullName -Destination $fallbackPath -Force
+        Write-Warning "No se encontró mapa para $($_.Name); copiado directamente a $fallbackPath"
         $missingCount++
     }
 }
-Write-Host "$copiedCount archivos actualizados en su ubicacion original ($missingCount sin encontrar)."
+Write-Host "$copiedCount archivos actualizados exitosamente en $RawJsonFolder" -ForegroundColor Green
 
 # --build-clarity-dbs escribe glossary.db/clarity_dialog.db en $ExportStaging;
 # las copiamos a donde tu Clarity local las lee, si configuraste esas rutas.
