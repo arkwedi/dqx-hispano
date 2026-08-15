@@ -51,7 +51,7 @@ if (Test-Path $envFile) {
 $EtpExe             = $env:ETP_EXE_PATH        # ej: "C:\Tools\ETPLocalizer\etp.exe"
 $EtpWorkDir         = $env:ETP_WORK_DIR        # carpeta donde corres etp.exe (aqui aparecen common/, etp/, json/, rps/)
 $LocalDb            = ".\translations.db"
-$ExportStaging      = $env:ETP_WORK_DIR&"\json\_lang\en"   # export_translations.py escribe aqui, plano (un .json por archivo)
+$ExportStaging      = $env:ETP_WORK_DIR  # export_translations.py escribe aqui, plano (un .json por archivo)
 $ChangedReviewCsv   = ".\logs\ja_changed_$(Get-Date -Format yyyy-MM-dd).csv"
 $BackupCsv          = ".\backups\backup_$(Get-Date -Format yyyy-MM-dd).csv"
 $ClarityGlossaryDb  = $env:CLARITY_GLOSSARY_DB_PATH   # ej: "C:\dqxclarity\misc_files\glossary.db"
