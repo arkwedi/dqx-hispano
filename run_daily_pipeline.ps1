@@ -47,16 +47,16 @@ if (Test-Path $envFile) {
     Write-Host "Variables cargadas desde .env" -ForegroundColor DarkGray
 }
 
-# --- Rutas -- ajusta a tu layout real ---
-$EtpExe             = $env:ETP_EXE_PATH        # ej: "C:\Tools\ETPLocalizer\etp.exe"
-$EtpWorkDir         = $env:ETP_WORK_DIR        # carpeta donde corres etp.exe (aqui aparecen common/, etp/, json/, rps/)
-$LocalDb            = ".\translations.db"
-$ExportStaging      = $env:ETP_WORK_DIR  # export_translations.py escribe aqui, plano (un .json por archivo)
-$ChangedReviewCsv   = ".\logs\ja_changed_$(Get-Date -Format yyyy-MM-dd).csv"
-$BackupCsv          = ".\backups\backup_$(Get-Date -Format yyyy-MM-dd).csv"
-$ClarityGlossaryDb  = $env:CLARITY_GLOSSARY_DB_PATH   # ej: "C:\dqxclarity\misc_files\glossary.db"
-$ClarityDialogDb    = $env:CLARITY_DIALOG_DB_PATH     # ej: "C:\dqxclarity\misc_files\clarity_dialog.db"
-$CommonZipOutput    = ".\etp_output\common.zip"
+# --- Rutas con Join-Path para evitar colisiones ---
+$EtpExe             = $env:ETP_EXE_PATH
+$EtpWorkDir         = $env:ETP_WORK_DIR
+$LocalDb            = Join-Path $EtpWorkDir "translations.db"
+$ExportStaging      = Join-Path $EtpWorkDir "etp_output\es_staging"   # <-- Ruta absoluta segura
+$ChangedReviewCsv   = Join-Path $EtpWorkDir "logs\ja_changed_$(Get-Date -Format yyyy-MM-dd).csv"
+$BackupCsv          = Join-Path $EtpWorkDir "backups\backup_$(Get-Date -Format yyyy-MM-dd).csv"
+$ClarityGlossaryDb  = $env:CLARITY_GLOSSARY_DB_PATH
+$ClarityDialogDb    = $env:CLARITY_DIALOG_DB_PATH
+$CommonZipOutput    = Join-Path $EtpWorkDir "etp_output\common.zip"
 
 if (-not $env:DATABASE_URL) {
     Write-Error "DATABASE_URL no esta definida. Configurala antes de correr este script."
