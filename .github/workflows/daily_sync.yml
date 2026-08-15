@@ -42,8 +42,8 @@ jobs:
         with:
           name: dqx-es-sync-${{ github.run_id }}
           path: |
-            logs/*.csv
-            etp_output/es_staging/**
+            ${{ vars.ETP_WORK_DIR }}/logs/*.csv
+            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/**
           if-no-files-found: ignore
 
       - name: Publish nightly build as a GitHub Release
@@ -55,6 +55,6 @@ jobs:
           body: "Ultima corrida exitosa del pipeline: ${{ github.run_id }}, ${{ github.event.repository.updated_at }}"
           prerelease: true
           files: |
-            etp_output/common.zip
-            etp_output/es_staging/glossary.db
-            etp_output/es_staging/clarity_dialog.db
+            ${{ vars.ETP_WORK_DIR }}/etp_output/common.zip
+            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/glossary.db
+            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/clarity_dialog.db
