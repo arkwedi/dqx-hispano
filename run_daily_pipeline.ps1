@@ -121,7 +121,7 @@ if (Test-Path $ChangedReviewCsv) {
 
 Write-Host "`n=== Paso 5: Supabase -> JSON con ES + DBs de Clarity (export_translations.py) ===" -ForegroundColor Cyan
 if (Test-Path $ExportStaging) { Remove-Item $ExportStaging -Recurse -Force }
-$exportArgs = @("--lang", "es", "--all", "--output", $ExportStaging, "--build-clarity-dbs")
+$exportArgs = @("--lang", "es", "--all", "--output", (Join-Path $EtpWorkDir "json\_lang\en"), "--build-clarity-dbs")
 python scripts\export_translations.py @exportArgs
 if ($LASTEXITCODE -ne 0) { Write-Error "export_translations.py fallo"; exit 1 }
 
