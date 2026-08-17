@@ -253,14 +253,14 @@ def apply_to_clarity_dbs(ja_to_es, glossary_db, dialog_db):
         if not path:
             continue
         count = overwrite_en_column(path, table, ja_to_es)
-        print(f"  {os.path.basename(path)} / {table} (overwrite en): {count} filas actualizadas")
+        #print(f"  {os.path.basename(path)} / {table} (overwrite en): {count} filas actualizadas")
 
     for db_key, table in FILL_ES_COLUMN_TARGETS:
         path = db_paths[db_key]
         if not path:
             continue
         count = fill_es_column(path, table, ja_to_es)
-        print(f"  {os.path.basename(path)} / {table} (fill es): {count} filas actualizadas")
+        #print(f"  {os.path.basename(path)} / {table} (fill es): {count} filas actualizadas")
 
 
 def build_clarity_dbs(entries_rows, output_dir, glossary_max_len=DEFAULT_GLOSSARY_MAX_LEN):

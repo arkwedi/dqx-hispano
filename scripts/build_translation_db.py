@@ -118,7 +118,7 @@ def build_database(json_folder: Path, db_path: Path, overwrite: bool):
                 # so in-progress ES translations are never lost.
                 skipped_duplicates += 1
 
-        print(f"  {json_path.name}: {len(rows)} entries")
+        #print(f"  {json_path.name}: {len(rows)} entries")
 
     conn.commit()
     conn.close()
