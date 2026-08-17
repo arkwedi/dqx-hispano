@@ -11,16 +11,14 @@
 #                                      misma carpeta donde corres etp.exe)
 #   2. etp.exe port-translations .  -> merges in Clarity's current EN
 #   3. build_translation_db.py      -> JSON -> local SQLite snapshot
-#      (lee json/ recursivamente, no le importa la subestructura interna)
+#      (fuente real confirmada: json\_lang\en)
 #   4. sync_json_updates.py         -> SQLite -> Supabase
-#   5. export_translations.py       -> Supabase -> ES JSON, escrito a una
-#                                      carpeta de staging plana y luego
-#                                      copiado de vuelta a la ubicacion
-#                                      ORIGINAL exacta de cada archivo
-#                                      (usando un mapa armado en el paso 1,
-#                                      sin necesidad de conocer de antemano
-#                                      la subestructura de json/) + fresh
-#                                      glossary.db / clarity_dialog.db
+#   5. export_translations.py       -> Supabase -> ES JSON, escrito
+#                                      DIRECTAMENTE en json\_lang\en
+#                                      (confirmado como la ubicacion real
+#                                      que etp.exe rebuild lee) + fresh
+#                                      glossary.db / clarity_dialog.db en
+#                                      esa misma carpeta
 #   6. etp.exe rebuild . .          -> JSON -> ETP binaries in common/
 #   7. Compress common/ -> common.zip
 #
@@ -51,7 +49,7 @@ if (Test-Path $envFile) {
 $EtpExe             = $env:ETP_EXE_PATH
 $EtpWorkDir         = $env:ETP_WORK_DIR
 $LocalDb            = Join-Path $EtpWorkDir "translations.db"
-$ExportStaging      = Join-Path $EtpWorkDir "etp_output\es_staging"   # <-- Ruta absoluta segura
+$ClarityDbOutput    = Join-Path $EtpWorkDir "clarity_dbs"   # separado de json\_lang\en a proposito
 $ChangedReviewCsv   = Join-Path $EtpWorkDir "logs\ja_changed_$(Get-Date -Format yyyy-MM-dd).csv"
 $BackupCsv          = Join-Path $EtpWorkDir "backups\backup_$(Get-Date -Format yyyy-MM-dd).csv"
 $ClarityGlossaryDb  = $env:CLARITY_GLOSSARY_DB_PATH
@@ -85,21 +83,13 @@ finally {
     Pop-Location
 }
 
-$RawJsonFolder = Join-Path $EtpWorkDir "json"
+$RawJsonFolder = Join-Path $EtpWorkDir "json\_lang\en"
 if (-not (Test-Path $RawJsonFolder) -or (Get-ChildItem $RawJsonFolder -Filter *.json -Recurse).Count -eq 0) {
     Write-Error "No se encontraron JSON en $RawJsonFolder tras correr ETPLocalizer."
     exit 1
 }
 $jsonFileCount = (Get-ChildItem $RawJsonFolder -Filter *.json -Recurse).Count
 Write-Host "OK: $jsonFileCount JSON de origen en $RawJsonFolder"
-
-# Mapa nombre-de-archivo -> ruta completa real, para poder reescribir cada
-# archivo exactamente donde etp.exe espera encontrarlo en el paso 6, sin
-# tener que adivinar/hardcodear la subestructura interna de json/.
-$jsonFileMap = @{}
-Get-ChildItem $RawJsonFolder -Filter *.json -Recurse | ForEach-Object {
-    $jsonFileMap[$_.BaseName] = $_.FullName
-}
 
 Write-Host "`n=== Paso 3: construir snapshot local (build_translation_db.py) ===" -ForegroundColor Cyan
 python scripts\build_translation_db.py $RawJsonFolder --output $LocalDb --overwrite
@@ -120,38 +110,22 @@ if (Test-Path $ChangedReviewCsv) {
 }
 
 Write-Host "`n=== Paso 5: Supabase -> JSON con ES + DBs de Clarity (export_translations.py) ===" -ForegroundColor Cyan
-if (Test-Path $ExportStaging) { Remove-Item $ExportStaging -Recurse -Force }
-$exportArgs = @("--lang", "es", "--all", "--output", (Join-Path $EtpWorkDir "json\_lang\en"), "--build-clarity-dbs")
+New-Item -ItemType Directory -Force -Path $ClarityDbOutput | Out-Null
+$exportArgs = @(
+    "--lang", "es", "--all",
+    "--output", $RawJsonFolder,
+    "--build-clarity-dbs",
+    "--clarity-db-output", $ClarityDbOutput
+)
 python scripts\export_translations.py @exportArgs
 if ($LASTEXITCODE -ne 0) { Write-Error "export_translations.py fallo"; exit 1 }
+Write-Host "JSON actualizados directamente en $RawJsonFolder" -ForegroundColor Green
+Write-Host "glossary.db / clarity_dialog.db generadas en $ClarityDbOutput (fuera de json\_lang\en)" -ForegroundColor Green
 
-# export_translations.py escribe un .json plano por archivo en $ExportStaging.
-# Los reescribimos en su ubicacion ORIGINAL real (usando el mapa armado mas
-# arriba), para que etp.exe rebuild encuentre cada uno donde corresponde,
-# sin importar que tan anidada este la carpeta json/ internamente.
-# --- Paso 5 (Sección de copiado corregida) ---
-$copiedCount = 0
-$missingCount = 0
-
-Get-ChildItem $ExportStaging -Filter *.json | ForEach-Object {
-    if ($jsonFileMap.ContainsKey($_.BaseName)) {
-        $destinationPath = $jsonFileMap[$_.BaseName]
-        Copy-Item $_.FullName -Destination $destinationPath -Force
-        $copiedCount++
-    } else {
-        # Si por alguna razón no estaba en el mapa, forzamos la copia directa a la carpeta json de ETPWorkDir
-        $fallbackPath = Join-Path $EtpWorkDir "json\$($_.Name)"
-        Copy-Item $_.FullName -Destination $fallbackPath -Force
-        Write-Warning "No se encontró mapa para $($_.Name); copiado directamente a $fallbackPath"
-        $missingCount++
-    }
-}
-Write-Host "$copiedCount archivos actualizados exitosamente en $RawJsonFolder" -ForegroundColor Green
-
-# --build-clarity-dbs escribe glossary.db/clarity_dialog.db en $ExportStaging;
-# las copiamos a donde tu Clarity local las lee, si configuraste esas rutas.
-$generatedGlossaryDb = Join-Path $ExportStaging "glossary.db"
-$generatedDialogDb   = Join-Path $ExportStaging "clarity_dialog.db"
+# Copiamos desde $ClarityDbOutput (NO desde json\_lang\en) a donde tu
+# Clarity local las lee, si configuraste esas rutas.
+$generatedGlossaryDb = Join-Path $ClarityDbOutput "glossary.db"
+$generatedDialogDb   = Join-Path $ClarityDbOutput "clarity_dialog.db"
 if ($ClarityGlossaryDb -and (Test-Path $generatedGlossaryDb)) {
     Copy-Item $generatedGlossaryDb $ClarityGlossaryDb -Force
     Write-Host "glossary.db copiada a $ClarityGlossaryDb"

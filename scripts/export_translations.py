@@ -46,6 +46,12 @@ Usage:
     python export_translations.py --lang es --all --output out/ \\
         --clarity-glossary-db "C:\\path\\to\\glossary.db" \\
         --clarity-dialog-db "C:\\path\\to\\clarity_dialog.db"
+
+    # Build glossary.db/clarity_dialog.db from scratch, in a SEPARATE
+    # folder from the JSON (recommended -- keeps the .db files out of the
+    # tree that etp.exe rebuild reads):
+    python export_translations.py --lang es --all --output json/_lang/en \\
+        --build-clarity-dbs --clarity-db-output clarity_dbs/
 """
 
 import argparse
@@ -253,14 +259,14 @@ def apply_to_clarity_dbs(ja_to_es, glossary_db, dialog_db):
         if not path:
             continue
         count = overwrite_en_column(path, table, ja_to_es)
-        #print(f"  {os.path.basename(path)} / {table} (overwrite en): {count} filas actualizadas")
+        print(f"  {os.path.basename(path)} / {table} (overwrite en): {count} filas actualizadas")
 
     for db_key, table in FILL_ES_COLUMN_TARGETS:
         path = db_paths[db_key]
         if not path:
             continue
         count = fill_es_column(path, table, ja_to_es)
-        #print(f"  {os.path.basename(path)} / {table} (fill es): {count} filas actualizadas")
+        print(f"  {os.path.basename(path)} / {table} (fill es): {count} filas actualizadas")
 
 
 def build_clarity_dbs(entries_rows, output_dir, glossary_max_len=DEFAULT_GLOSSARY_MAX_LEN):
@@ -365,7 +371,12 @@ def main():
                          help="Path to Clarity's local clarity_dialog.db -- if given, also updates it with real ES translations")
     parser.add_argument("--build-clarity-dbs", action="store_true",
                          help="Build glossary.db and clarity_dialog.db FROM SCRATCH (no existing Clarity install "
-                              "needed) inside --output, using es->en->ja fallback for every row")
+                              "needed), using es->en->ja fallback for every row")
+    parser.add_argument("--clarity-db-output", default=None,
+                         help="Where to write glossary.db/clarity_dialog.db. Defaults to --output, but you almost "
+                              "always want this to be a SEPARATE folder -- if --output is the same folder that "
+                              "etp.exe rebuild later reads (e.g. json\\_lang\\en), these two .db files end up "
+                              "sitting inside your translation source tree, which is not where they belong.")
     parser.add_argument("--glossary-max-len", type=int, default=DEFAULT_GLOSSARY_MAX_LEN,
                          help=f"Max ja character length to count as a 'term' for glossary/m00_strings "
                               f"(default: {DEFAULT_GLOSSARY_MAX_LEN})")
@@ -428,7 +439,9 @@ def main():
         apply_to_clarity_dbs(ja_to_es, args.glossary_db, args.dialog_db)
 
     if args.build_clarity_dbs:
-        build_clarity_dbs(entries_rows, args.output, args.glossary_max_len)
+        clarity_db_output = args.clarity_db_output or args.output
+        os.makedirs(clarity_db_output, exist_ok=True)
+        build_clarity_dbs(entries_rows, clarity_db_output, args.glossary_max_len)
 
 
 if __name__ == "__main__":

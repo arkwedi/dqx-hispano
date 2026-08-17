@@ -20,7 +20,7 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+
       # --- Paso para instalar librerías necesarias de Python ---
       - name: Install Python dependencies
         run: |
@@ -38,14 +38,15 @@ jobs:
           CLARITY_DIALOG_DB_PATH: ${{ vars.CLARITY_DIALOG_DB_PATH }}
         run: ./run_daily_pipeline.ps1
 
-      - name: Upload review CSV and staging files as workflow artifacts
+      - name: Upload review CSV and Clarity DBs as workflow artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dqx-es-sync-${{ github.run_id }}
           path: |
             ${{ vars.ETP_WORK_DIR }}/logs/*.csv
-            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/**
+            ${{ vars.ETP_WORK_DIR }}/clarity_dbs/glossary.db
+            ${{ vars.ETP_WORK_DIR }}/clarity_dbs/clarity_dialog.db
           if-no-files-found: ignore
 
       - name: Publish nightly build as a GitHub Release
@@ -58,5 +59,5 @@ jobs:
           prerelease: true
           files: |
             ${{ vars.ETP_WORK_DIR }}/etp_output/common.zip
-            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/glossary.db
-            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/clarity_dialog.db
+            ${{ vars.ETP_WORK_DIR }}/clarity_dbs/glossary.db
+            ${{ vars.ETP_WORK_DIR }}/clarity_dbs/clarity_dialog.db
