@@ -19,7 +19,6 @@ jobs:
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
-        with:
 
       # --- Paso para instalar librerías necesarias de Python ---
       - name: Install Python dependencies
