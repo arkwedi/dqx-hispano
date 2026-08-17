@@ -14,19 +14,19 @@ permissions:
 
 jobs:
   sync:
-    runs-on: self-hosted
-    environment: DATABASE_URL
+    runs-on: self-hosted   # your own PC, registered as a runner for this repo
+    environment: DATABASE_URL    # <--- AGREGA ESTA LÍNEA AQUÍ
     steps:
-      # En lugar de usar actions/checkout@v4, actualiza el código usando el cliente git local
-      - name: Actualizar repositorio local
-        run: |
-          git fetch origin
-          git reset --hard origin/main
-
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      # --- Paso para instalar librerías necesarias de Python ---
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install --only-binary=:all: psycopg2-binary
+
 
       - name: Run pipeline (etp.exe -> Supabase -> ETP -> common.zip)
         shell: powershell
@@ -37,3 +37,26 @@ jobs:
           CLARITY_GLOSSARY_DB_PATH: ${{ vars.CLARITY_GLOSSARY_DB_PATH }}
           CLARITY_DIALOG_DB_PATH: ${{ vars.CLARITY_DIALOG_DB_PATH }}
         run: ./run_daily_pipeline.ps1
+
+      - name: Upload review CSV and staging files as workflow artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dqx-es-sync-${{ github.run_id }}
+          path: |
+            ${{ vars.ETP_WORK_DIR }}/logs/*.csv
+            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/**
+          if-no-files-found: ignore
+
+      - name: Publish nightly build as a GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: "Build nocturno (auto-generado)"
+          body: "Ultima corrida exitosa del pipeline: ${{ github.run_id }}, ${{ github.event.repository.updated_at }}"
+          prerelease: true
+          files: |
+            ${{ vars.ETP_WORK_DIR }}/etp_output/common.zip
+            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/glossary.db
+            ${{ vars.ETP_WORK_DIR }}/etp_output/es_staging/clarity_dialog.db
