@@ -69,6 +69,19 @@ if (-not $EtpWorkDir -or -not (Test-Path $EtpWorkDir)) {
     exit 1
 }
 
+# Limpiar restos de corridas anteriores ANTES de extraer/reconstruir --
+# common/, etp/, rps/ no se limpian solas entre corridas, asi que sin esto
+# es posible que un common.zip termine con una mezcla de RPS nuevos y
+# viejos (de antes de un fix, por ejemplo). Preferimos una corrida un poco
+# mas lenta pero garantizadamente limpia.
+foreach ($folder in @("common", "etp", "rps")) {
+    $path = Join-Path $EtpWorkDir $folder
+    if (Test-Path $path) {
+        Write-Host "Limpiando $path de una corrida anterior..." -ForegroundColor DarkGray
+        Remove-Item $path -Recurse -Force
+    }
+}
+
 Push-Location $EtpWorkDir
 try {
     Write-Host "=== Paso 1: DAT -> JSON crudo (etp.exe all .) ===" -ForegroundColor Cyan
@@ -149,6 +162,17 @@ $CommonFolder = Join-Path $EtpWorkDir "common"
 if (-not (Test-Path $CommonFolder)) {
     Write-Error "No se encontro la carpeta common/ tras el rebuild en $CommonFolder"
     exit 1
+}
+
+# Verificacion de frescura: si algun archivo en common/ NO fue tocado en
+# los ultimos minutos, es una senal de que el rebuild no lo regeneraba
+# realmente (util para detectar el tipo de problema que reportaste).
+$staleThreshold = (Get-Date).AddMinutes(-10)
+$staleFiles = Get-ChildItem $CommonFolder -Recurse -File | Where-Object { $_.LastWriteTime -lt $staleThreshold }
+if ($staleFiles) {
+    Write-Warning "$($staleFiles.Count) archivo(s) en common/ NO se modificaron en esta corrida (mas viejos que 10 minutos). Ejemplo: $($staleFiles[0].FullName) ($($staleFiles[0].LastWriteTime))"
+} else {
+    Write-Host "OK: todos los archivos en common/ son de esta corrida." -ForegroundColor Green
 }
 
 Write-Host "`n=== Paso 7: comprimir common/ -> common.zip ===" -ForegroundColor Cyan
