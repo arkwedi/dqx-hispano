@@ -178,7 +178,9 @@ if ($staleFiles) {
 Write-Host "`n=== Paso 7: comprimir common/ -> common.zip ===" -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path (Split-Path $CommonZipOutput) | Out-Null
 if (Test-Path $CommonZipOutput) { Remove-Item $CommonZipOutput }
-Compress-Archive -Path "$CommonFolder\*" -DestinationPath $CommonZipOutput
+
+# Se pasa $CommonFolder (sin \*) para incluir la carpeta raíz 'common' dentro del ZIP
+Compress-Archive -Path $CommonFolder -DestinationPath $CommonZipOutput
 
 Write-Host "`n=== Listo ===" -ForegroundColor Green
 Write-Host "common.zip generado en: $CommonZipOutput"
