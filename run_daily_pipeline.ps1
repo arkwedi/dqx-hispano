@@ -180,6 +180,28 @@ New-Item -ItemType Directory -Force -Path (Split-Path $CommonZipOutput) | Out-Nu
 if (Test-Path $CommonZipOutput) { Remove-Item $CommonZipOutput }
 Compress-Archive -Path $CommonFolder -DestinationPath $CommonZipOutput
 
+Write-Host "`n=== Paso 8: armar paste_in_dqxclarity.zip ===" -ForegroundColor Cyan
+$PasteStaging = Join-Path $EtpWorkDir "etp_output\paste_in_dqxclarity_staging\dqxclarity"
+$PasteMiscFiles = Join-Path $PasteStaging "misc_files"
+if (Test-Path (Join-Path $EtpWorkDir "etp_output\paste_in_dqxclarity_staging")) {
+    Remove-Item (Join-Path $EtpWorkDir "etp_output\paste_in_dqxclarity_staging") -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path $PasteMiscFiles | Out-Null
+
+Copy-Item (Join-Path $PSScriptRoot "clarity_patch\main.py") (Join-Path $PasteStaging "main.py") -Force
+Copy-Item (Join-Path $PSScriptRoot "clarity_patch\original_main.py") (Join-Path $PasteStaging "original_main.py") -Force
+Copy-Item (Join-Path $ClarityDbOutput "glossary.db") (Join-Path $PasteMiscFiles "glossary.db") -Force
+Copy-Item (Join-Path $ClarityDbOutput "clarity_dialog.db") (Join-Path $PasteMiscFiles "clarity_dialog.db") -Force
+
+$PasteZipOutput = Join-Path $EtpWorkDir "etp_output\paste_in_dqxclarity.zip"
+if (Test-Path $PasteZipOutput) { Remove-Item $PasteZipOutput }
+Compress-Archive -Path $PasteStaging -DestinationPath $PasteZipOutput
+Write-Host "paste_in_dqxclarity.zip generado en: $PasteZipOutput" -ForegroundColor Green
+
+# Copiamos el readme del repo (estatico, lo editas tu directamente en el
+# repositorio) junto al resto de los entregables de esta corrida.
+Copy-Item (Join-Path $PSScriptRoot "readme.md") (Join-Path $EtpWorkDir "etp_output\readme.md") -Force
+
 Write-Host "`n=== Listo ===" -ForegroundColor Green
 Write-Host "common.zip generado en: $CommonZipOutput"
-Write-Host "Unico paso manual restante: abrir Clarity y convertir ese zip a .clpk."
+Write-Host "espanol.clpk generado en: $EspanolClpkOutput"
