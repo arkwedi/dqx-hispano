@@ -108,11 +108,6 @@ Write-Host "`n=== Paso 3: construir snapshot local (build_translation_db.py) ===
 python scripts\build_translation_db.py $RawJsonFolder --output $LocalDb --overwrite
 if ($LASTEXITCODE -ne 0) { Write-Error "build_translation_db.py fallo"; exit 1 }
 
-Write-Host "`n=== Paso 3b: respaldo antes de tocar Supabase (backup_entries.py) ===" -ForegroundColor Cyan
-New-Item -ItemType Directory -Force -Path (Split-Path $BackupCsv) | Out-Null
-python scripts\backup_entries.py --output $BackupCsv
-if ($LASTEXITCODE -ne 0) { Write-Error "backup_entries.py fallo"; exit 1 }
-
 Write-Host "`n=== Paso 4: sincronizar con Supabase (sync_json_updates.py) ===" -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path (Split-Path $ChangedReviewCsv) | Out-Null
 python scripts\sync_json_updates.py $LocalDb --review-output $ChangedReviewCsv

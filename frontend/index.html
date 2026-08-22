@@ -5,36 +5,19 @@
 <title>DQX - Traducción ES</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  /* Estilo de hipervínculo interactivo para el archivo */
-.file-link {
-  color: #2563eb; /* Azul de enlace clásico moderno */
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer; /* Cursor de mano / dedo clickeable */
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  transition: all 0.15s ease-in-out;
-}
+  .file-link {
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    transition: all 0.15s ease-in-out;
+  }
+  .file-link:hover { color: #1d4ed8; text-decoration: underline; }
 
-/* Efecto hover/iluminación al pasar el mouse */
-.file-link:hover {
-  color: #1d4ed8; /* Azul más intenso */
-  text-decoration: underline; /* Subrayado de enlace */
-}
-
-/* Añade un mini icono de filtro dinámico al pasar el mouse */
-.file-link::after {
-  content: "🔍";
-  font-size: 9px;
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
-}
-
-.file-link:hover::after {
-  opacity: 1;
-}
   :root {
     --border: #cbd5e1;
     --border-strong: #94a3b8;
@@ -48,45 +31,40 @@
     --ok-bg: #f0fdf4;
     --accent: #2563eb;
     --accent-hover: #1d4ed8;
+
+    --progress-red-bg: #fef2f2;
+    --progress-red-bar: #ef4444;
+    --progress-yellow-bg: #fefce8;
+    --progress-yellow-bar: #eab308;
+    --progress-green-bg: #f0fdf4;
+    --progress-green-bar: #22c55e;
   }
 
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    margin: 0;
-    background: var(--bg-alt);
-    color: var(--text);
-    font-size: 13px;
-    line-height: 1.5;
+    margin: 0; background: var(--bg-alt); color: var(--text); font-size: 13px; line-height: 1.5;
   }
 
   header {
-    background: var(--bg);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 20;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 12px;
+    align-items: center; position: sticky; top: 0; z-index: 20;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
 
+  .home-logo {
+    display: flex; align-items: center; gap: 6px; font-weight: 700;
+    color: var(--text); text-decoration: none; font-size: 15px; cursor: pointer;
+  }
+
   header input, header select, button {
-    font-size: 13px;
-    padding: 7px 12px;
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
-    outline: none;
+    font-size: 13px; padding: 7px 12px; border: 1px solid var(--border-strong);
+    border-radius: 6px; background: var(--bg); color: var(--text); outline: none;
   }
 
   header input:focus, header select:focus, textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
   }
 
   button { cursor: pointer; font-weight: 500; }
@@ -95,163 +73,207 @@
   button.primary:hover { background: var(--accent-hover); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  #search { flex: 1; min-width: 220px; }
+  #search { flex: 1; min-width: 200px; }
   .spacer { flex: 1; }
 
   .user-badge {
-    font-size: 12px;
-    color: var(--text-muted);
-    background: var(--bg-alt);
-    padding: 4px 10px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
+    font-size: 12px; color: var(--text-muted); background: var(--bg-alt);
+    padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border);
   }
+  .role-badge {
+    font-size: 11px; font-weight: 600; padding: 3px 9px;
+    border-radius: 10px; text-transform: uppercase;
+  }
+  .role-badge.suggester { background: #fef3c7; color: #92400e; }
+  .role-badge.editor { background: #dbeafe; color: #1e40af; }
+  .role-badge.admin { background: #fce7f3; color: #9d174d; }
 
   main { padding: 16px 20px 40px; max-width: 1600px; margin: 0 auto; }
 
   #rules {
-    background: var(--warn-bg);
-    border: 1px solid #fca5a5;
-    color: #991b1b;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    border-radius: 8px;
-    font-size: 12.5px;
+    background: var(--warn-bg); border: 1px solid #fca5a5; color: #991b1b;
+    padding: 12px 16px; margin-bottom: 16px; border-radius: 8px; font-size: 12.5px;
   }
   #rules b { display: block; margin-bottom: 4px; font-weight: 600; }
 
-  /* Búsqueda Avanzada Panel */
-  #advSearchPanel {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px;
+  #authScreen, #pendingScreen {
+    max-width: 420px; margin: 80px auto; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px; padding: 28px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  }
+  #authScreen h1, #pendingScreen h1 { font-size: 18px; margin: 0 0 6px; }
+  #authScreen p, #pendingScreen p { color: var(--text-muted); font-size: 13px; margin: 0 0 18px; }
+  #authScreen label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; margin-top: 12px; }
+  #authScreen input { width: 100%; padding: 9px 10px; }
+  #authTabs {
+    display: flex;
+    gap: 0;
     margin-bottom: 16px;
-    display: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  #authTabs button {
+    flex: 1;
+    background: #ffffff;
+    color: #888888;
+    border: 1px solid #e2e8f0;
+    border-radius: 0;
+    padding: 8px 12px;
+    font-weight: 500;
+  }
+  #authTabs button:first-child {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-right: none;
+  }
+  #authTabs button:last-child {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+  }
+  #authTabs button.active {
+    background: #00d2d3;
+    color: #ffffff;
+    border-color: #00bcd4;
+    font-weight: 600;
+  }
+  #authError { color: var(--warn); font-size: 12.5px; margin-top: 10px; display: none; }
+  #authSubmit { width: 100%; margin-top: 18px; padding: 10px; }
+
+  .dashboard-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .file-card {
+    display: flex; align-items: center; border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; background: var(--bg); cursor: pointer;
+  }
+  .file-card.range-red { background-color: var(--progress-red-bg); border-color: #fca5a5; }
+  .file-card.range-yellow { background-color: var(--progress-yellow-bg); border-color: #fde047; }
+  .file-card.range-green { background-color: var(--progress-green-bg); border-color: #86efac; }
+  .file-card-info { width: 260px; flex-shrink: 0; }
+  .file-card-title { font-weight: 700; font-size: 14px; color: var(--text); }
+  .file-card-count { font-size: 11.5px; color: var(--text-muted); }
+  .file-card-progress { flex: 1; display: flex; align-items: center; gap: 14px; padding-left: 20px; }
+  .progress-pct { font-size: 13px; font-weight: 700; min-width: 45px; }
+  .progress-bar-bg { flex: 1; height: 16px; background: rgba(0,0,0,0.06); border-radius: 8px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 8px; }
+  .fill-red { background-color: var(--progress-red-bar); }
+  .fill-yellow { background-color: var(--progress-yellow-bar); }
+  .fill-green { background-color: var(--progress-green-bar); }
+
+  .status-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; margin-bottom: 6px; }
+  .status-badge.pendiente { background: var(--bg-alt); color: var(--text-muted); }
+  .status-badge.borrador_mt { background: #fef3c7; color: #92400e; }
+  .status-badge.traducido { background: var(--ok-bg); color: var(--ok); }
+  .status-badge.revisado { background: #dbeafe; color: #1e40af; }
+  .action-btn-link { font-size: 11px; color: var(--accent); cursor: pointer; text-decoration: underline; background: none; border: none; padding: 0; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+    z-index: 100; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--bg); border-radius: 10px; padding: 20px;
+    max-width: 720px; width: 92%; max-height: 88vh; overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  }
+  .modal-box h3 { margin: 0 0 12px; font-size: 15px; display: flex; justify-content: space-between; }
+  .modal-box .close-btn { cursor: pointer; color: var(--text-muted); font-weight: 700; }
+
+  #advSearchPanel {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; margin-bottom: 16px; display: none; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   }
   #advSearchPanel.open { display: block; }
   .adv-grid { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 
-  /* Table styling & Fix Sticky Header */
   .table-container {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    overflow: auto;
-    max-height: 75vh;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    position: relative;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    overflow: auto; max-height: 75vh; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   }
 
   table { width: 100%; border-collapse: separate; border-spacing: 0; }
-  
   th {
-    background: #f8fafc;
-    font-weight: 600;
-    color: var(--text-muted);
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    border-bottom: 2px solid var(--border);
-    padding: 10px 12px;
-    text-align: left;
+    background: #f8fafc; font-weight: 600; color: var(--text-muted);
+    position: sticky; top: 0; z-index: 10;
+    border-bottom: 2px solid var(--border); padding: 10px 12px; text-align: left;
   }
-
-  td {
-    border-bottom: 1px solid var(--border);
-    padding: 10px 12px;
-    vertical-align: top;
-    text-align: left;
-    background: #ffffff;
-  }
-
-  tr.selected-row td {
-    background-color: #f0f9ff;
-  }
-
-  td.ref {
-    color: #334155;
-    white-space: pre-wrap;
-    max-width: 280px;
-    font-size: 12.5px;
-    word-break: break-word;
-  }
-  
+  td { border-bottom: 1px solid var(--border); padding: 10px 12px; vertical-align: top; background: #fff; }
+  tr.selected-row td { background-color: #f0f9ff; }
+  td.ref { color: #334155; white-space: pre-wrap; max-width: 280px; font-size: 12.5px; word-break: break-word; }
   td.es-cell { min-width: 320px; }
 
   textarea.es-input {
-    width: 100%;
-    min-height: 75px;
-    font-size: 13px;
-    padding: 8px;
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    resize: vertical;
-    font-family: inherit;
-    transition: border-color 0.2s;
+    width: 100%; min-height: 75px; font-size: 13px; padding: 8px;
+    border: 1px solid var(--border-strong); border-radius: 6px; resize: vertical; font-family: inherit;
   }
+  textarea.es-input.has-invalid-chars { border-color: var(--warn) !important; background-color: #fff5f5; }
 
-  textarea.es-input.has-invalid-chars {
-    border-color: var(--warn) !important;
-    background-color: #fff5f5;
-  }
-
-  .line-stats {
-    margin-top: 6px;
-    font-size: 11px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    color: var(--text-muted);
-  }
-  
+  .line-stats { margin-top: 6px; font-size: 11px; display: flex; flex-wrap: wrap; gap: 10px; color: var(--text-muted); }
   .line-stats .over { color: #d97706; font-weight: 600; }
   .line-stats .invalid-alert { color: var(--warn); font-weight: 700; text-transform: uppercase; }
-  .line-stats .page-sep { width: 100%; border-top: 1px dashed var(--border-strong); margin: 4px 0; padding-top: 4px; }
 
-  /* Select de estado */
-  select.status-select {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
-  }
-
-  #pager {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    justify-content: center;
-    margin-top: 16px;
-  }
+  #pager { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  #pager button { min-width: 34px; padding: 6px 10px; }
+  #pager button.current-page { background: var(--accent); color: #fff; border-color: var(--accent); }
   #loadingMsg { color: var(--text-muted); padding: 40px; text-align: center; font-size: 14px; }
 
   footer {
-    text-align: center;
-    padding: 20px;
-    font-size: 12px;
-    color: var(--text-muted);
-    border-top: 1px solid var(--border);
-    background: var(--bg);
-    margin-top: 40px;
+    text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted);
+    border-top: 1px solid var(--border); background: var(--bg); margin-top: 40px;
   }
   footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
-  footer a:hover { text-decoration: underline; }
+  
+  .history-item { border-bottom: 1px solid var(--border); padding: 8px 0; font-size: 12px; }
+  .history-meta { color: var(--text-muted); font-size: 11px; margin-bottom: 2px; }
 </style>
 </head>
 <body>
 
+<!-- AUTH SCREEN -->
+<div id="authScreen" style="display:none;">
+  <h1>DQX Hispano</h1>
+  <p>Inicia sesión o crea una cuenta para colaborar en la traducción.</p>
+  <div id="authTabs">
+    <button id="tabLogin" class="active">Ingresar</button>
+    <button id="tabSignup">Registrarse</button>
+  </div>
+  <div id="signupNameField" style="display:none;">
+    <label>Nombre o apodo</label>
+    <input id="authDisplayName" type="text" placeholder="Tu nombre en el historial" />
+  </div>
+  <label>Correo</label>
+  <input id="authEmail" type="email" placeholder="tu@correo.com" />
+  <label>Contraseña</label>
+  <input id="authPassword" type="password" placeholder="••••••••" />
+  <div id="authError"></div>
+  <button id="authSubmit" class="primary">Iniciar sesión</button>
+</div>
+
+<!-- PENDING SCREEN -->
+<div id="pendingScreen" style="display:none;">
+  <div style="font-size:32px; margin-bottom:8px;">⏳</div>
+  <h1>Cuenta creada, esperando aprobación</h1>
+  <p>Un administrador revisará tu solicitud pronto.</p>
+  <button id="pendingLogout">Cerrar sesión</button>
+</div>
+
+<!-- APP SCREEN -->
+<div id="appScreen" style="display:none;">
+
 <header>
-  <input id="search" type="text" placeholder="Buscar texto (admite etiquetas <%s...>, \s, etc.)..." />
-  
-  <!-- Buscador de Archivos Combo/Datalist -->
-  <input id="fileInput" list="fileListOptions" placeholder="Escribe o selecciona archivo..." style="min-width:240px;" />
+  <a class="home-logo" id="homeBtn" title="Ir al Dashboard principal">
+    <span>🛡️</span> <span>DQX Hispano</span>
+  </a>
+
+  <input id="search" type="text" placeholder="Buscar texto global..." />
+  <button id="searchBtn" class="primary" type="button">Buscar</button>
+
+  <input id="fileInput" list="fileListOptions" placeholder="Filtrar por archivo..." style="min-width:200px;" />
   <datalist id="fileListOptions"></datalist>
 
   <select id="statusSelect">
     <option value="">Estado: Todos</option>
     <option value="pendiente">Pendiente</option>
+    <option value="borrador_mt">Borrador MT</option>
     <option value="traducido">Traducido</option>
     <option value="revisado">Revisado</option>
   </select>
@@ -260,422 +282,644 @@
 
   <div class="spacer"></div>
 
-  <button id="batchSaveBtn" class="primary" disabled>Guardar seleccionados (0)</button>
+  <button id="batchSaveBtn" class="primary" style="display:none;" disabled>Guardar seleccionados (0)</button>
+  <span id="roleBadge" class="role-badge"></span>
   <span id="userLabel" class="user-badge"></span>
+  <button id="logoutBtn">Salir</button>
 </header>
 
 <main>
   <div id="rules">
     <b>Reglas de traducción al español</b>
-    El texto debe verse igual que el resultado de normalizar a ASCII (sin eñe, sin vocales acentuadas, sin ¿ ¡ ni ningún otro carácter especial) -- el motor del juego no los lee y puede llegar a crashear.
+    El texto debe verse igual que el resultado de normalizar a ASCII (sin eñe, sin vocales acentuadas, sin ¿ ¡ ni caracteres especiales) para prevenir fallos en el juego.[cite: 7]
   </div>
 
-  <!-- Panel Búsqueda Avanzada -->
   <div id="advSearchPanel">
-    <div class="adv-grid">
+    <div class="adv-grid" style="margin-bottom: 12px;">
       <label>
         Coincidencia:
         <select id="advMatchType">
           <option value="contains">Contiene término</option>
-          <option value="exact">Palabra exacta (Igual a)</option>
+          <option value="exact">Palabra exacta</option>
           <option value="starts">Empieza con</option>
           <option value="ends">Termina con</option>
         </select>
       </label>
 
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="advInvalidOnly" /> Solo con caracteres prohibidos (tildes/eñes)
-      </label>
-
-      <label>
-        Largo min:
-        <input type="number" id="advMinLen" placeholder="Ej: 3" style="width:70px;" />
-      </label>
-
-      <label>
-        Largo max:
-        <input type="number" id="advMaxLen" placeholder="Ej: 46" style="width:70px;" />
-      </label>
-
-      <button id="applyAdvSearch" class="primary">Aplicar filtros avanzados</button>
+      <button id="applyAdvSearch" class="primary">Aplicar filtros</button>
       <button id="resetAdvSearch">Limpiar</button>
+    </div>
+    
+    <hr style="border:0; border-top:1px solid var(--border); margin: 12px 0;">
+    
+    <div class="adv-grid">
+      <strong style="font-size:12px;">Buscar y Reemplazar (En vista actual o por término):</strong>
+      <input id="frFindText" type="text" placeholder="Texto a reemplazar..." style="width: 180px;" />
+      <input id="frReplaceText" type="text" placeholder="Reemplazar por..." style="width: 180px;" />
+      <button id="frPreviewBtn" class="primary">Vista previa cambios</button>
     </div>
   </div>
 
-  <div id="loadingMsg">Cargando entradas...</div>
-  
-  <div class="table-container" id="tableContainer" style="display:none;">
-    <table id="mainTable">
-      <thead>
-        <tr>
-          <th style="width:40px; text-align:center;">
-            <input type="checkbox" id="selectAllCheckbox" title="Seleccionar/Deseleccionar todo" />
-          </th>
-          <th style="width:90px;">ID / Archivo</th>
-          <th style="width:25%;">JA (Referencia)</th>
-          <th style="width:25%;">EN (Referencia)</th>
-          <th>ES (Editable)</th>
-          <th style="width:110px;">Estado</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+  <!-- DASHBOARD CONTAINER -->
+  <div id="dashboardView">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+      <h2 style="font-size:16px; margin:0; color:var(--text);">Progreso de Traducción por Archivo</h2>
+      
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label for="sortDashboardSelect" style="font-weight:600; color:var(--text-muted); font-size:12px;">Ordenar por:</label>
+        <select id="sortDashboardSelect" style="padding:5px 10px; font-size:12px;">
+          <option value="name_asc">Nombre (A-Z)</option>
+          <option value="name_desc">Nombre (Z-A)</option>
+          <option value="pct_desc">Progreso (Mayor a Menor)</option>
+          <option value="pct_asc">Progreso (Menor a Mayor)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="dashboardGrid" class="dashboard-grid"></div>
   </div>
 
-  <div id="pager">
-    <button id="prevPage">← Anterior</button>
-    <span id="pageLabel" style="font-weight: 500;"></span>
-    <button id="nextPage">Siguiente →</button>
+  <!-- TABLA DE EDICIÓN CONTAINER -->
+  <div id="editorView" style="display:none;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <button id="backToDashBtn">← Volver al Dashboard</button>
+      <span id="currentEditorFileLabel" style="font-weight:600; color:var(--text-muted);"></span>
+    </div>
+    <div class="table-container">
+      <table id="mainTable">
+        <thead>
+          <tr>
+            <th style="width:40px; text-align:center;"><input type="checkbox" id="selectAllCheckbox" /></th>
+            <th style="width:110px;">ID / Archivo</th>
+            <th style="width:25%;">JA (Referencia)</th>
+            <th style="width:25%;">EN (Referencia)</th>
+            <th>ES (Editable)</th>
+            <th style="width:130px;">Estado / Historial</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
   </div>
+
+  <div id="loadingMsg" style="display:none;">Cargando...</div>
+  <div id="pager"></div>
 </main>
 
 <footer>
-  Repositorio del proyecto: <a href="https://github.com/arkwedi/dqx-hispano" target="_blank" rel="noopener">https://github.com/arkwedi/dqx-hispano</a>
+  Repositorio del proyecto: <a href="https://github.com/arkwedi/dqx-hispano" target="_blank" rel="noopener">https://github.com/arkwedi/dqx-hispano</a>[cite: 7]
 </footer>
+
+</div>
+
+<!-- MODAL DE HISTORIAL -->
+<div id="historyModalOverlay" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Historial de cambios <span class="close-btn" id="closeHistoryModal">✕</span></h3>
+    <div id="historyModalBody">Cargando historial...</div>
+  </div>
+</div>
+
+<!-- MODAL DE VISTA PREVIA FIND & REPLACE -->
+<div id="frModalOverlay" class="modal-overlay">
+  <div class="modal-box" style="max-width: 850px;">
+    <h3>Vista previa de Reemplazo Masivo <span class="close-btn" id="closeFrModal">✕</span></h3>
+    <p id="frMatchCountMsg" style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;"></p>
+    <div class="table-container" style="max-height: 50vh; margin-bottom: 15px;">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:90px;">ID</th>
+            <th>ES (Actual)</th>
+            <th>ES (Resultado con reemplazo)</th>
+          </tr>
+        </thead>
+        <tbody id="frPreviewTbody"></tbody>
+      </table>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button id="cancelFrBtn">Cancelar</button>
+      <button id="confirmFrBtn" class="primary">Aplicar Reemplazo</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://nchdmvlabsgozmyvjspb.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jaGRtdmxhYnNnb3pteXZqc3BiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzcyMDIsImV4cCI6MjEwMTI1MzIwMn0.tKyEA6TWELpKn7ngYrwObmX1cICLgaiqt4-ym6c01CA";
-
 const supabase_cli = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const PAGE_SIZE = 25;
+const DASHBOARD_PAGE_SIZE = 12;
+const EDITOR_PAGE_SIZE = 25;
 const MAX_LINE_CHARS = 46;
 const INVALID_CHARS_REGEX = /[áéíóúÁÉÍÓÚñÑ¿¡]/g;
 
+let currentMode = "dashboard";
 let currentPage = 0;
-let currentUser = localStorage_safe_prompt();
-let loadedRowsData = []; // Caché de datos cargados actualmente
-
-function localStorage_safe_prompt() {
-  let name = localStorage.getItem("dqx_user");
-  if (!name) {
-    name = window.prompt("Tu nombre o apodo (para registrar quién tradujo cada línea):", "ark");
-    if (name) localStorage.setItem("dqx_user", name);
-  }
-  
-  const labelEl = document.getElementById("userLabel");
-  labelEl.textContent = name ? `Editando como: ${name} (cambiar)` : "Anónimo (cambiar)";
-  labelEl.style.cursor = "pointer";
-  labelEl.title = "Haz clic para cambiar de usuario";
-  
-  // Al hacer clic sobre el nombre, te permite cambiarlo
-  labelEl.onclick = () => {
-    const newName = window.prompt("Nuevo nombre o apodo:", name || "");
-    if (newName !== null && newName.trim() !== "") {
-      localStorage.setItem("dqx_user", newName.trim());
-      location.reload(); // Recarga para aplicar el cambio
-    }
-  };
-
-  return name || "anonimo";
-}
-
-function debounce(fn, ms) {
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
+let totalCount = 0;
+let loadedRowsData = [];
+let allFilesProgress = [];
+let currentProfile = null;
+let currentSortMode = "name_asc";
+let pendingFrUpdates = [];
 
 function escapeHtml(s) {
   return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-function sanitizeSearchTerm(term) {
-  // Escapa % y _ para consultas PostgREST/Supabase ilike
-  return term.replace(/[%_]/g, "\\$&");
+// ═══════════════════ AUTH ═══════════════════
+let authMode = "login";
+document.getElementById("tabLogin").addEventListener("click", () => {
+  authMode = "login";
+  document.getElementById("tabLogin").classList.add("active");
+  document.getElementById("tabSignup").classList.remove("active");
+  document.getElementById("signupNameField").style.display = "none";
+  document.getElementById("authSubmit").textContent = "Iniciar sesión";
+});
+
+document.getElementById("tabSignup").addEventListener("click", () => {
+  authMode = "signup";
+  document.getElementById("tabSignup").classList.add("active");
+  document.getElementById("tabLogin").classList.remove("active");
+  document.getElementById("signupNameField").style.display = "block";
+  document.getElementById("authSubmit").textContent = "Crear cuenta";
+});
+
+document.getElementById("authSubmit").addEventListener("click", async () => {
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+  const errEl = document.getElementById("authError");
+  errEl.style.display = "none";
+
+  if (!email || !password) {
+    errEl.textContent = "Completa correo y contraseña.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  let result = authMode === "signup"
+    ? await supabase_cli.auth.signUp({ email, password, options: { data: { display_name: document.getElementById("authDisplayName").value.trim() || email } } })
+    : await supabase_cli.auth.signInWithPassword({ email, password });
+
+  if (result.error) {
+    errEl.textContent = result.error.message;
+    errEl.style.display = "block";
+    return;
+  }
+  await routeAfterAuth();
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await supabase_cli.auth.signOut();
+  location.reload();
+});
+document.getElementById("pendingLogout").addEventListener("click", async () => {
+  await supabase_cli.auth.signOut();
+  location.reload();
+});
+
+function showScreen(name) {
+  document.getElementById("authScreen").style.display = name === "auth" ? "block" : "none";
+  document.getElementById("pendingScreen").style.display = name === "pending" ? "block" : "none";
+  document.getElementById("appScreen").style.display = name === "app" ? "block" : "none";
 }
 
-function renderLineStats(container, textarea) {
-  const text = textarea.value;
-  const lines = text.split("\n");
-  const pages = [[]];
-  
-  const invalidMatches = text.match(INVALID_CHARS_REGEX);
-  if (invalidMatches) {
-    textarea.classList.add("has-invalid-chars");
+async function routeAfterAuth() {
+  const { data: { session } } = await supabase_cli.auth.getSession();
+  if (!session) { showScreen("auth"); return; }
+
+  const { data: profile } = await supabase_cli.from("profiles").select("id, display_name, role").eq("id", session.user.id).maybeSingle();
+  if (!profile || profile.role === "pending") { showScreen("pending"); return; }
+
+  currentProfile = profile;
+  showScreen("app");
+
+  document.getElementById("userLabel").textContent = profile.display_name || session.user.email;
+  const roleBadge = document.getElementById("roleBadge");
+  roleBadge.textContent = profile.role;
+  roleBadge.className = "role-badge " + profile.role;
+
+  await loadFileOptions();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const fileFromUrl = urlParams.get("file");
+  if (fileFromUrl) {
+    document.getElementById("fileInput").value = fileFromUrl;
+    switchView("editor");
   } else {
-    textarea.classList.remove("has-invalid-chars");
+    switchView("dashboard");
   }
-
-  lines.forEach(line => {
-    if (line.trim() === "<br>") { pages.push([]); }
-    else { pages[pages.length - 1].push(line); }
-  });
-
-  let html = "";
-  if (invalidMatches) {
-    html += `<span class="invalid-alert">⚠️ CONTIENE TILDES/EÑES (${invalidMatches.length})</span> | `;
-  }
-
-  pages.forEach((page, pIdx) => {
-    if (pIdx > 0) html += `<div class="page-sep">Página ${pIdx + 1} (tras &lt;br&gt;)</div>`;
-    page.forEach((line, lIdx) => {
-      const count = line.length;
-      const over = count > MAX_LINE_CHARS;
-      html += `<span class="${over ? "over" : ""}">L${lIdx + 1}: ${count}/${MAX_LINE_CHARS}</span> `;
-    });
-  });
-
-  container.innerHTML = html;
 }
 
-async function loadFileOptions() {
-  const { data, error } = await supabase_cli.from("file_list").select("file, entry_count");
+// ═══════════════════ DASHBOARD ═══════════════════
+
+document.getElementById("sortDashboardSelect").addEventListener("change", (e) => {
+  currentSortMode = e.target.value;
+  sortAndRenderDashboard();
+});
+
+function sortAndRenderDashboard() {
+  allFilesProgress.sort((a, b) => {
+    const nameA = (a.file || "").toLowerCase();
+    const nameB = (b.file || "").toLowerCase();
+    const pctA = a.progress_pct || 0;
+    const pctB = b.progress_pct || 0;
+
+    switch (currentSortMode) {
+      case "name_desc": return nameB.localeCompare(nameA);
+      case "pct_desc": return pctB - pctA;
+      case "pct_asc": return pctA - pctB;
+      case "name_asc":
+      default: return nameA.localeCompare(nameB);
+    }
+  });
+
+  currentPage = 0;
+  renderDashboardPage();
+  renderPager();
+}
+
+async function loadDashboard() {
+  document.getElementById("loadingMsg").style.display = "block";
+  document.getElementById("dashboardGrid").innerHTML = "";
+
+  const { data, error } = await supabase_cli
+    .from("file_list")
+    .select("file, entry_count, translated_count, progress_pct");
+
+  document.getElementById("loadingMsg").style.display = "none";
   if (error) { console.error(error); return; }
-  const datalist = document.getElementById("fileListOptions");
-  datalist.innerHTML = "";
-  data.forEach(row => {
-    const opt = document.createElement("option");
-    opt.value = row.file;
-    opt.label = `${row.file} (${row.entry_count} entradas)`;
-    datalist.appendChild(opt);
+
+  allFilesProgress = data || [];
+  totalCount = allFilesProgress.length;
+  sortAndRenderDashboard();
+}
+
+function renderDashboardPage() {
+  const grid = document.getElementById("dashboardGrid");
+  grid.innerHTML = "";
+
+  const start = currentPage * DASHBOARD_PAGE_SIZE;
+  const pageFiles = allFilesProgress.slice(start, start + DASHBOARD_PAGE_SIZE);
+
+  pageFiles.forEach(f => {
+    const total = f.entry_count || 0;
+    const pct = Math.round(f.progress_pct || 0);
+
+    let colorClass = "range-yellow";
+    let fillClass = "fill-yellow";
+    if (pct < 40) { colorClass = "range-red"; fillClass = "fill-red"; }
+    else if (pct >= 80) { colorClass = "range-green"; fillClass = "fill-green"; }
+
+    const card = document.createElement("div");
+    card.className = `file-card ${colorClass}`;
+    card.innerHTML = `
+      <div class="file-card-info">
+        <div class="file-card-title">${escapeHtml(f.file)}</div>
+        <div class="file-card-count">${total} entradas</div>
+      </div>
+      <div class="file-card-progress">
+        <div class="progress-pct">${pct}%</div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill ${fillClass}" style="width: ${pct}%;"></div>
+        </div>
+      </div>
+    `;
+
+    card.addEventListener("click", () => {
+      document.getElementById("fileInput").value = f.file;
+      switchView("editor");
+    });
+
+    grid.appendChild(card);
   });
 }
 
-function buildQuery() {
-  let query = supabase_cli.from("entries").select("id, file, entry_id, ja, en, es, status, updated_at");
+// ═══════════════════ EDICIÓN Y GUARDADO ═══════════════════
 
-  const fileVal = document.getElementById("fileInput").value.trim();
-  if (fileVal) query = query.eq("file", fileVal);
+function switchView(mode) {
+  currentMode = mode;
+  currentPage = 0;
 
-  const statusVal = document.getElementById("statusSelect").value;
-  if (statusVal) query = query.eq("status", statusVal);
+  if (mode === "dashboard") {
+    document.getElementById("dashboardView").style.display = "block";
+    document.getElementById("editorView").style.display = "none";
+    document.getElementById("batchSaveBtn").style.display = "none";
+    document.getElementById("fileInput").value = "";
+    window.history.pushState({}, "", window.location.pathname);
+    loadDashboard();
+  } else {
+    document.getElementById("dashboardView").style.display = "none";
+    document.getElementById("editorView").style.display = "block";
+    document.getElementById("batchSaveBtn").style.display = "inline-block";
+    
+    const currentFile = document.getElementById("fileInput").value.trim();
+    document.getElementById("currentEditorFileLabel").textContent = currentFile ? `Archivo: ${currentFile}` : "Todas las coincidencias";
+    
+    loadEditorPage();
+  }
+}
 
+async function loadEditorPage() {
+  document.getElementById("loadingMsg").style.display = "block";
+  document.getElementById("tbody").innerHTML = "";
+
+  const fileVal = document.getElementById("fileInput").value.trim() || null;
+  const statusVal = document.getElementById("statusSelect").value || null;
   const searchVal = document.getElementById("search").value.trim();
   const matchType = document.getElementById("advMatchType").value;
 
-  if (searchVal) {
-    const clean = sanitizeSearchTerm(searchVal);
-    let pattern = `%${clean}%`;
-    if (matchType === "exact") pattern = clean;
-    else if (matchType === "starts") pattern = `${clean}%`;
-    else if (matchType === "ends") pattern = `%${clean}`;
-
-    query = query.or(`ja.ilike.${pattern},en.ilike.${pattern},es.ilike.${pattern}`);
-  }
-
-  // Ordenar por última actualización (más reciente a más antigua)
-  return query.order("updated_at", { ascending: false, nullsFirst: false });
-}
-
-async function loadPage() {
-  document.getElementById("loadingMsg").style.display = "block";
-  document.getElementById("tableContainer").style.display = "none";
-
-  const from = currentPage * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
-  const { data, error } = await buildQuery().range(from, to);
+  const { data, error } = await supabase_cli.rpc("search_entries", {
+    p_search: searchVal,
+    p_file: fileVal,
+    p_status: statusVal,
+    p_match_type: matchType,
+    p_limit: EDITOR_PAGE_SIZE,
+    p_offset: currentPage * EDITOR_PAGE_SIZE
+  });
 
   document.getElementById("loadingMsg").style.display = "none";
-  document.getElementById("tableContainer").style.display = "block";
 
-  if (error) { console.error(error); return; }
+  if (error) { alert("Error al buscar: " + error.message); return; }
 
-  // Filtros Avanzados Client-side (Caracteres Prohibidos / Largos de Cadena)
-  let filteredData = data || [];
-  const onlyInvalid = document.getElementById("advInvalidOnly").checked;
-  const minLen = parseInt(document.getElementById("advMinLen").value, 10);
-  const maxLen = parseInt(document.getElementById("advMaxLen").value, 10);
+  loadedRowsData = data || [];
+  totalCount = loadedRowsData.length > 0 ? parseInt(loadedRowsData[0].total_count, 10) : 0;
 
-  if (onlyInvalid) {
-    filteredData = filteredData.filter(r => (r.es || "").match(INVALID_CHARS_REGEX));
-  }
-  if (!isNaN(minLen)) {
-    filteredData = filteredData.filter(r => (r.es || "").length >= minLen);
-  }
-  if (!isNaN(maxLen)) {
-    filteredData = filteredData.filter(r => (r.es || "").length <= maxLen);
-  }
-
-  loadedRowsData = filteredData;
   renderRows(loadedRowsData);
-  updateBatchButtonState();
-
-  document.getElementById("pageLabel").textContent = `Página ${currentPage + 1}`;
-  document.getElementById("prevPage").disabled = currentPage === 0;
-  document.getElementById("nextPage").disabled = filteredData.length < PAGE_SIZE;
+  renderPager();
 }
 
 function renderRows(rows) {
   const tbody = document.getElementById("tbody");
   tbody.innerHTML = "";
+
   document.getElementById("selectAllCheckbox").checked = false;
+  updateBatchSaveButton();
 
   rows.forEach((row, index) => {
     const tr = document.createElement("tr");
-    tr.dataset.index = index;
     tr.innerHTML = `
-      <td style="text-align:center; vertical-align: middle;">
-        <input type="checkbox" class="row-checkbox" data-index="${index}" />
-      </td>
-      <td>
-        <strong>${row.entry_id}</strong><br>
-        <a class="file-link" href="?file=${encodeURIComponent(row.file)}" title="Haz clic para filtrar aquí | Ctrl + Clic para abrir en nueva pestaña">${escapeHtml(row.file)}</a>
-      </td>
+      <td style="text-align:center;"><input type="checkbox" class="row-checkbox" data-index="${index}" /></td>
+      <td><strong>${row.entry_id}</strong><br><small class="file-link">${escapeHtml(row.file)}</small></td>
       <td class="ref">${escapeHtml(row.ja)}</td>
       <td class="ref">${escapeHtml(row.en)}</td>
       <td class="es-cell">
-        <textarea class="es-input" data-index="${index}" spellcheck="false" autocorrect="off">${escapeHtml(row.es)}</textarea>
+        <textarea class="es-input" data-index="${index}">${escapeHtml(row.es || "")}</textarea>
         <div class="line-stats"></div>
       </td>
       <td>
-        <select class="status-select">
-          <option value="pendiente" ${row.status === "pendiente" ? "selected" : ""}>Pendiente</option>
-          <option value="traducido" ${row.status === "traducido" ? "selected" : ""}>Traducido</option>
-          <option value="revisado" ${row.status === "revisado" ? "selected" : ""}>Revisado</option>
-        </select>
+        <span class="status-badge ${row.status}">${row.status}</span><br>
+        <button class="action-btn-link history-btn" data-id="${row.id}">📜 Ver historial</button>
       </td>
     `;
 
+    const checkbox = tr.querySelector(".row-checkbox");
+    checkbox.addEventListener("change", updateBatchSaveButton);
+    
     const textarea = tr.querySelector(".es-input");
     const statsDiv = tr.querySelector(".line-stats");
-    const checkbox = tr.querySelector(".row-checkbox");
-    const statusSelect = tr.querySelector(".status-select");
-    const fileLink = tr.querySelector(".file-link");
-
+    textarea.addEventListener("input", () => renderLineStats(statsDiv, textarea));
     renderLineStats(statsDiv, textarea);
 
-    // Lógica inteligente de clic:
-    fileLink.addEventListener("click", (e) => {
-      // Si presiona Ctrl, Cmd (Mac), o clic central de la rueda
-      if (e.ctrlKey || e.metaKey || e.button === 1) {
-        // Deja que el navegador abra el enlace en una pestaña nueva normalmente
-        return;
-      }
-
-      // Clic normal: Filtra en la misma pestaña sin recargar todo
-      e.preventDefault();
-      document.getElementById("fileInput").value = row.file;
-      currentPage = 0;
-      
-      // Actualiza la URL del navegador limpiamente sin recargar la página
-      const newUrl = new URL(window.location);
-      newUrl.searchParams.set("file", row.file);
-      window.history.pushState({}, "", newUrl);
-
-      loadPage();
-    });
-
-    // Eventos de interacción de edición
-    textarea.addEventListener("input", () => {
-      renderLineStats(statsDiv, textarea);
-      checkbox.checked = true;
-      tr.classList.add("selected-row");
-      updateBatchButtonState();
-    });
-
-    textarea.addEventListener("change", () => {
-      if (statusSelect.value === "pendiente" && textarea.value.trim() !== "") {
-        statusSelect.value = "traducido";
-      }
-    });
-
-    checkbox.addEventListener("change", () => {
-      tr.classList.toggle("selected-row", checkbox.checked);
-      updateBatchButtonState();
-    });
+    const histBtn = tr.querySelector(".history-btn");
+    histBtn.addEventListener("click", () => openHistoryModal(row.id));
 
     tbody.appendChild(tr);
   });
 }
 
-function updateBatchButtonState() {
-  const checkedBoxes = document.querySelectorAll(".row-checkbox:checked");
-  const btn = document.getElementById("batchSaveBtn");
-  const count = checkedBoxes.length;
-  btn.disabled = count === 0;
-  btn.textContent = `Guardar seleccionados (${count})`;
+function updateBatchSaveButton() {
+  const selectedCheckboxes = document.querySelectorAll(".row-checkbox:checked");
+  const batchBtn = document.getElementById("batchSaveBtn");
+  const count = selectedCheckboxes.length;
+
+  batchBtn.textContent = `Guardar seleccionados (${count})`;
+  batchBtn.disabled = count === 0;
+
+  document.querySelectorAll("#tbody tr").forEach(tr => {
+    const cb = tr.querySelector(".row-checkbox");
+    if (cb && cb.checked) {
+      tr.classList.add("selected-row");
+    } else {
+      tr.classList.remove("selected-row");
+    }
+  });
 }
 
-// Guardado Masivo
+// CORRECCIÓN: Actualización directa por ID (evita error de upsert en columnas IDENTITY)
 document.getElementById("batchSaveBtn").addEventListener("click", async () => {
-  const checkedBoxes = document.querySelectorAll(".row-checkbox:checked");
-  if (checkedBoxes.length === 0) return;
+  const selectedCheckboxes = document.querySelectorAll(".row-checkbox:checked");
+  if (selectedCheckboxes.length === 0) return;
 
-  const btn = document.getElementById("batchSaveBtn");
-  btn.disabled = true;
-  btn.textContent = "Guardando...";
+  document.getElementById("loadingMsg").style.display = "block";
 
-  let successCount = 0;
-  for (const cb of checkedBoxes) {
-    const idx = parseInt(cb.dataset.index, 10);
-    const row = loadedRowsData[idx];
-    const tr = cb.closest("tr");
-    const textarea = tr.querySelector(".es-input");
-    const statusSelect = tr.querySelector(".status-select");
+  try {
+    for (const cb of selectedCheckboxes) {
+      const idx = parseInt(cb.getAttribute("data-index"), 10);
+      const row = loadedRowsData[idx];
+      const tr = cb.closest("tr");
+      const newEs = tr.querySelector(".es-input").value;
 
-    const { error } = await supabase_cli.from("entries").update({
-      es: textarea.value,
-      status: statusSelect.value,
-      updated_by: currentUser,
-      updated_at: new Date().toISOString(),
-    }).eq("file", row.file).eq("entry_id", row.entry_id);
+      const { error } = await supabase_cli
+        .from("entries")
+        .update({ es: newEs, status: "traducido", updated_at: new Date().toISOString() })
+        .eq("id", row.id);
 
-    if (!error) {
-      cb.checked = false;
-      tr.classList.remove("selected-row");
-      successCount++;
+      if (error) throw error;
     }
+    await loadEditorPage();
+  } catch (err) {
+    alert("Error al guardar: " + err.message);
+  } finally {
+    document.getElementById("loadingMsg").style.display = "none";
   }
-
-  alert(`¡Listo! Se guardaron ${successCount} diálogos correctamente.`);
-  loadPage();
 });
 
-// Selección global
+// ═══════════════════ FIND & REPLACE MASIVO ═══════════════════
+
+document.getElementById("frPreviewBtn").addEventListener("click", async () => {
+  const findStr = document.getElementById("frFindText").value.trim();
+  const replaceStr = document.getElementById("frReplaceText").value;
+  
+  if (!findStr) {
+    alert("Ingresa un texto para buscar.");
+    return;
+  }
+
+  // Búsqueda en los elementos actualmente visibles/cargados en la vista actual
+  pendingFrUpdates = [];
+  loadedRowsData.forEach(row => {
+    const tr = document.querySelector(`.es-input[data-index="${loadedRowsData.indexOf(row)}"]`);
+    const currentEs = tr ? tr.value : (row.es || "");
+    
+    if (currentEs.includes(findStr)) {
+      const newEs = currentEs.replaceAll(findStr, replaceStr);
+      pendingFrUpdates.push({
+        id: row.id,
+        entry_id: row.entry_id,
+        old_es: currentEs,
+        es: newEs
+      });
+    }
+  });
+
+  const tbody = document.getElementById("frPreviewTbody");
+  tbody.innerHTML = "";
+  
+  document.getElementById("frMatchCountMsg").textContent = `Se encontraron ${pendingFrUpdates.length} coincidencias en la vista actual.`;
+
+  pendingFrUpdates.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${item.entry_id}</strong></td>
+      <td style="color:var(--text-muted);">${escapeHtml(item.old_es)}</td>
+      <td style="color:var(--ok); font-weight:600;">${escapeHtml(item.es)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById("frModalOverlay").classList.add("open");
+});
+
+document.getElementById("closeFrModal").addEventListener("click", () => {
+  document.getElementById("frModalOverlay").classList.remove("open");
+});
+document.getElementById("cancelFrBtn").addEventListener("click", () => {
+  document.getElementById("frModalOverlay").classList.remove("open");
+});
+
+document.getElementById("confirmFrBtn").addEventListener("click", async () => {
+  if (pendingFrUpdates.length === 0) return;
+
+  document.getElementById("loadingMsg").style.display = "block";
+
+  try {
+    for (const item of pendingFrUpdates) {
+      const { error } = await supabase_cli
+        .from("entries")
+        .update({ es: item.es, status: "traducido", updated_at: new Date().toISOString() })
+        .eq("id", item.id);
+
+      if (error) throw error;
+    }
+    document.getElementById("frModalOverlay").classList.remove("open");
+    await loadEditorPage();
+  } catch (err) {
+    alert("Error al aplicar reemplazo masivo: " + err.message);
+  } finally {
+    document.getElementById("loadingMsg").style.display = "none";
+  }
+});
+
+// ═══════════════════ HISTORIAL ═══════════════════
+
+async function openHistoryModal(entryId) {
+  const overlay = document.getElementById("historyModalOverlay");
+  const body = document.getElementById("historyModalBody");
+  overlay.classList.add("open");
+  body.innerHTML = "Cargando historial...";
+
+  // Consulta limpia sin joins automáticos de foreign keys para evitar errores 404 de PostgREST
+  const { data, error } = await supabase_cli
+    .from("history")
+    .select("old_es, new_es, changed_at")
+    .eq("entry_id", entryId)
+    .order("changed_at", { ascending: false });
+
+  if (error || !data || data.length === 0) {
+    body.innerHTML = "<p style='color:var(--text-muted);'>No hay historial registrado para esta entrada.</p>";
+    return;
+  }
+
+  body.innerHTML = data.map(h => `
+    <div class="history-item">
+      <div class="history-meta">
+        ${new Date(h.changed_at).toLocaleString()}
+      </div>
+      <div><strong>Anterior:</strong> ${escapeHtml(h.old_es || "(vacío)")}</div>
+      <div><strong>Nuevo:</strong> ${escapeHtml(h.new_es || "(vacío)")}</div>
+    </div>
+  `).join("");
+}
+
+document.getElementById("closeHistoryModal").addEventListener("click", () => {
+  document.getElementById("historyModalOverlay").classList.remove("open");
+});
+
+// ═══════════════════ PAGINACIÓN Y EVENTOS ═══════════════════
+
+function renderPager() {
+  const pager = document.getElementById("pager");
+  pager.innerHTML = "";
+
+  const pageSize = currentMode === "dashboard" ? DASHBOARD_PAGE_SIZE : EDITOR_PAGE_SIZE;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  if (totalPages <= 1) return;
+
+  for (let i = 0; i < totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = (i + 1).toString();
+    if (i === currentPage) btn.className = "current-page";
+    btn.addEventListener("click", () => {
+      currentPage = i;
+      if (currentMode === "dashboard") renderDashboardPage();
+      else loadEditorPage();
+    });
+    pager.appendChild(btn);
+  }
+}
+
 document.getElementById("selectAllCheckbox").addEventListener("change", (e) => {
   const isChecked = e.target.checked;
-  document.querySelectorAll(".row-checkbox").forEach(cb => {
-    cb.checked = isChecked;
-    cb.closest("tr").classList.toggle("selected-row", isChecked);
+  document.querySelectorAll(".row-checkbox").forEach(cb => cb.checked = isChecked);
+  updateBatchSaveButton();
+});
+
+function renderLineStats(container, textarea) {
+  const text = textarea.value;
+  const lines = text.split("\n");
+  const invalidMatches = text.match(INVALID_CHARS_REGEX);
+
+  textarea.classList.toggle("has-invalid-chars", !!invalidMatches);
+
+  let html = invalidMatches ? `<span class="invalid-alert">⚠️ CARACTERES INVÁLIDOS (${invalidMatches.length})</span> ` : "";
+  lines.forEach((line, i) => {
+    html += `<span class="${line.length > MAX_LINE_CHARS ? "over" : ""}">L${i + 1}: ${line.length}/${MAX_LINE_CHARS}</span> `;
   });
-  updateBatchButtonState();
-});
-
-// Búsqueda Avanzada Panel Toggle
-document.getElementById("toggleAdvSearch").addEventListener("click", () => {
-  document.getElementById("advSearchPanel").classList.toggle("open");
-});
-
-document.getElementById("applyAdvSearch").addEventListener("click", () => {
-  currentPage = 0;
-  loadPage();
-});
-
-document.getElementById("resetAdvSearch").addEventListener("click", () => {
-  document.getElementById("advMatchType").value = "contains";
-  document.getElementById("advInvalidOnly").checked = false;
-  document.getElementById("advMinLen").value = "";
-  document.getElementById("advMaxLen").value = "";
-  currentPage = 0;
-  loadPage();
-});
-
-// Filtros y Paginación
-document.getElementById("search").addEventListener("input", debounce(() => { currentPage = 0; loadPage(); }, 400));
-document.getElementById("fileInput").addEventListener("change", () => { currentPage = 0; loadPage(); });
-document.getElementById("statusSelect").addEventListener("change", () => { currentPage = 0; loadPage(); });
-document.getElementById("prevPage").addEventListener("click", () => { if (currentPage > 0) { currentPage--; loadPage(); } });
-document.getElementById("nextPage").addEventListener("click", () => { currentPage++; loadPage(); });
-
-// Inicializar
-async function initApp() {
-  await loadFileOptions();
-
-  // Leer si la URL viene con el parámetro de archivo (ej: ?file=nombre_archivo)
-  const urlParams = new URLSearchParams(window.location.search);
-  const fileFromUrl = urlParams.get("file");
-
-  if (fileFromUrl) {
-    document.getElementById("fileInput").value = fileFromUrl;
-  }
-
-  loadPage();
+  container.innerHTML = html;
 }
 
-// Ejecutar inicio
-initApp();
+async function loadFileOptions() {
+  const { data } = await supabase_cli.from("file_list").select("file");
+  const datalist = document.getElementById("fileListOptions");
+  datalist.innerHTML = "";
+  (data || []).forEach(row => {
+    const opt = document.createElement("option");
+    opt.value = row.file;
+    datalist.appendChild(opt);
+  });
+}
+
+function executeSearch() {
+  switchView("editor");
+}
+
+document.getElementById("searchBtn").addEventListener("click", executeSearch);
+document.getElementById("search").addEventListener("keydown", (e) => { if (e.key === "Enter") executeSearch(); });
+document.getElementById("fileInput").addEventListener("change", () => switchView("editor"));
+document.getElementById("statusSelect").addEventListener("change", () => switchView("editor"));
+document.getElementById("homeBtn").addEventListener("click", () => switchView("dashboard"));
+document.getElementById("backToDashBtn").addEventListener("click", () => switchView("dashboard"));
+document.getElementById("toggleAdvSearch").addEventListener("click", () => document.getElementById("advSearchPanel").classList.toggle("open"));
+document.getElementById("applyAdvSearch").addEventListener("click", () => switchView("editor"));
+document.getElementById("resetAdvSearch").addEventListener("click", () => {
+  document.getElementById("advMatchType").value = "contains";
+  document.getElementById("search").value = "";
+  switchView("editor");
+});
+
+routeAfterAuth();
 </script>
 </body>
 </html>
