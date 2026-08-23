@@ -163,7 +163,7 @@
   .status-badge.borrador_mt { background: #fef3c7; color: #92400e; }
   .status-badge.traducido { background: var(--ok-bg); color: var(--ok); }
   .status-badge.revisado { background: #dbeafe; color: #1e40af; }
-  .action-btn-link { font-size: 11px; color: var(--accent); cursor: pointer; text-decoration: underline; background: none; border: 0; padding: 0; }
+  .action-btn-link { font-size: 11px; color: var(--accent); cursor: pointer; text-decoration: underline; background: none; border: none; padding: 0; }
 
   .modal-overlay {
     display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5);
@@ -221,71 +221,9 @@
     border-top: 1px solid var(--border); background: var(--bg); margin-top: 40px;
   }
   footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
-
+  
   .history-item { border-bottom: 1px solid var(--border); padding: 8px 0; font-size: 12px; }
   .history-meta { color: var(--text-muted); font-size: 11px; margin-bottom: 2px; }
-
-  /* Profile menu styles */
-  .profile-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    min-width: 180px;
-    z-index: 1000;
-    display: none;
-  }
-  .profile-menu.open {
-    display: block;
-  }
-  .profile-menu-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    color: var(--text);
-  }
-  .profile-menu-item:hover {
-    background: var(--bg-alt);
-  }
-  .profile-menu-separator {
-    height: 1px;
-    background: var(--border);
-    margin: 4px 0;
-  }
-
-  /* Modal buttons styles */
-  .approve-suggestion-btn,
-  .make-suggester-btn {
-    background: var(--ok-bg);
-    color: var(--ok);
-    border: 1px solid var(--ok);
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 11px;
-    cursor: pointer;
-  }
-  .approve-suggestion-btn:hover,
-  .make-suggester-btn:hover {
-    background: var(--ok);
-    color: white;
-  }
-  .reject-suggestion-btn,
-  .make-editor-btn {
-    background: var(--warn-bg);
-    color: var(--warn);
-    border: 1px solid var(--warn);
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 11px;
-    cursor: pointer;
-  }
-  .reject-suggestion-btn:hover,
-  .make-editor-btn:hover {
-    background: var(--warn);
-    color: white;
-  }
 </style>
 </head>
 <body>
@@ -347,21 +285,7 @@
   <button id="batchSaveBtn" class="primary" style="display:none;" disabled>Guardar seleccionados (0)</button>
   <span id="roleBadge" class="role-badge"></span>
   <span id="userLabel" class="user-badge"></span>
-  <div id="profileMenu" class="profile-menu">
-    <div class="profile-menu-item" id="viewSuggestions">
-      <span>📝 Ver sugerencias</span>
-    </div>
-    <div class="profile-menu-item" id="viewContributions">
-      <span>📊 Historial de contribuciones</span>
-    </div>
-    <div class="profile-menu-separator"></div>
-    <div class="profile-menu-item" id="viewPendingUsers">
-      <span>👥 Usuarios pendientes</span>
-    </div>
-    <div class="profile-menu-item" id="logoutBtn">
-      <span>🚪 Cerrar sesión</span>
-    </div>
-  </div>
+  <button id="logoutBtn">Salir</button>
 </header>
 
 <main>
@@ -385,9 +309,9 @@
       <button id="applyAdvSearch" class="primary">Aplicar filtros</button>
       <button id="resetAdvSearch">Limpiar</button>
     </div>
-
+    
     <hr style="border:0; border-top:1px solid var(--border); margin: 12px 0;">
-
+    
     <div class="adv-grid">
       <strong style="font-size:12px;">Buscar y Reemplazar (En vista actual o por término):</strong>
       <input id="frFindText" type="text" placeholder="Texto a reemplazar..." style="width: 180px;" />
@@ -400,7 +324,7 @@
   <div id="dashboardView">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
       <h2 style="font-size:16px; margin:0; color:var(--text);">Progreso de Traducción por Archivo</h2>
-
+      
       <div style="display:flex; align-items:center; gap:8px;">
         <label for="sortDashboardSelect" style="font-weight:600; color:var(--text-muted); font-size:12px;">Ordenar por:</label>
         <select id="sortDashboardSelect" style="padding:5px 10px; font-size:12px;">
@@ -442,83 +366,6 @@
   <div id="pager"></div>
 </main>
 
-<!-- MODAL DE SUGERENCIAS -->
-<div id="suggestionsModalOverlay" class="modal-overlay">
-  <div class="modal-box" style="max-width: 900px;">
-    <h3>Sugerencias de Traducción <span class="close-btn" id="closeSuggestionsModal">✕</span></h3>
-    <div id="suggestionsStats" style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;"></div>
-    <div class="table-container" style="max-height: 60vh; margin-bottom: 15px;">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:60px;">ID</th>
-            <th style="width:150px;">Archivo - ID</th>
-            <th style="width:25%;">EN (Original)</th>
-            <th style="width:25%;">ES (Propone)</th>
-            <th style="width:100px;">Estado</th>
-            <th style="width:100px;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="suggestionsTbody"></tbody>
-      </table>
-    </div>
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button id="closeSuggestionsBtn" class="primary">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL DE CONTRIBUCIONES -->
-<div id="contributionsModalOverlay" class="modal-overlay">
-  <div class="modal-box" style="max-width: 800px;">
-    <h3>Historial de Contribuciones <span class="close-btn" id="closeContributionsModal">✕</span></h3>
-    <div id="contributionsStats" style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;"></div>
-    <div class="table-container" style="max-height: 60vh; margin-bottom: 15px;">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:60px;">Fecha</th>
-            <th style="width:150px;">Archivo - ID</th>
-            <th style="width:200px;">Cambio Realizado</th>
-            <th style="width:100px;">Estado</th>
-          </tr>
-        </thead>
-        <tbody id="contributionsTbody"></tbody>
-      </table>
-    </div>
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button id="closeContributionsBtn" class="primary">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL DE USUARIOS PENDIENTES -->
-<div id="pendingUsersModalOverlay" class="modal-overlay">
-  <div class="modal-box" style="max-width: 500px;">
-    <h3>Usuarios Pendientes de Aprobación <span class="close-btn" id="closePendingUsersModal">✕</span></h3>
-    <div id="pendingUsersStats" style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;"></div>
-    <div class="table-container" style="max-height: 60vh; margin-bottom: 15px;">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:100px;">Fecha Registro</th>
-            <th style="width:200px;">Nombre/Email</th>
-            <th style="width:100px;">Rol Actual</th>
-            <th style="width:150px;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="pendingUsersTbody"></tbody>
-      </table>
-    </div>
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button id="closePendingUsersBtn" class="primary">Cerrar</button>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
-
 <footer>
   Repositorio del proyecto: <a href="https://github.com/arkwedi/dqx-hispano" target="_blank" rel="noopener">https://github.com/arkwedi/dqx-hispano</a>[cite: 7]
 </footer>
@@ -557,7 +404,6 @@
   </div>
 </div>
 
-</body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://nchdmvlabsgozmyvjspb.supabase.co";
@@ -579,7 +425,7 @@ let currentSortMode = "name_asc";
 let pendingFrUpdates = [];
 
 function escapeHtml(s) {
-  return (s || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+  return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 // ═══════════════════ AUTH ═══════════════════
@@ -612,21 +458,9 @@ document.getElementById("authSubmit").addEventListener("click", async () => {
     return;
   }
 
-  let result;
-  if (authMode === "signup") {
-    const displayName = document.getElementById("authDisplayName").value.trim() || email;
-    result = await supabase_cli.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          display_name: displayName
-        }
-      }
-    });
-  } else {
-    result = await supabase_cli.auth.signInWithPassword({ email, password });
-  }
+  let result = authMode === "signup"
+    ? await supabase_cli.auth.signUp({ email, password, options: { data: { display_name: document.getElementById("authDisplayName").value.trim() || email } } })
+    : await supabase_cli.auth.signInWithPassword({ email, password });
 
   if (result.error) {
     errEl.textContent = result.error.message;
@@ -634,62 +468,6 @@ document.getElementById("authSubmit").addEventListener("click", async () => {
     return;
   }
   await routeAfterAuth();
-});
-
-// Allow Enter key to submit login/signup form
-document.getElementById("authPassword").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    document.getElementById("authSubmit").click();
-  }
-});
-
-document.getElementById("authEmail").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
-    e.preventDefault(); // Prevent form submission if any
-    document.getElementById("authPassword").focus();
-  }
-});
-
-document.getElementById("authDisplayName").addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && authMode === "signup") {
-    document.getElementById("authSubmit").click();
-  }
-});
-
-// Profile menu functionality
-document.getElementById("userLabel").addEventListener("click", (e) => {
-  e.stopPropagation(); // Prevent closing when clicking the trigger
-  document.getElementById("profileMenu").classList.toggle("open");
-});
-
-// Close profile menu when clicking outside
-document.addEventListener("click", (e) => {
-  if (!e.target.closest('#userLabel') && !e.target.closest('#profileMenu')) {
-    document.getElementById("profileMenu").classList.remove("open");
-  }
-});
-
-// Close modals when clicking outside
-document.addEventListener("click", (e) => {
-  if (e.target.classList.contains('modal-overlay')) {
-    e.target.classList.remove('open');
-  }
-});
-
-// Profile menu item handlers
-document.getElementById("viewSuggestions").addEventListener("click", () => {
-  document.getElementById("profileMenu").classList.remove("open");
-  showSuggestionsModal();
-});
-
-document.getElementById("viewContributions").addEventListener("click", () => {
-  document.getElementById("profileMenu").classList.remove("open");
-  showContributionsModal();
-});
-
-document.getElementById("viewPendingUsers").addEventListener("click", () => {
-  document.getElementById("profileMenu").classList.remove("open");
-  showPendingUsersModal();
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -816,9 +594,6 @@ function renderDashboardPage() {
 
     grid.appendChild(card);
   });
-
-  // Update pager to show current page
-  renderPager();
 }
 
 // ═══════════════════ EDICIÓN Y GUARDADO ═══════════════════
@@ -838,37 +613,11 @@ function switchView(mode) {
     document.getElementById("dashboardView").style.display = "none";
     document.getElementById("editorView").style.display = "block";
     document.getElementById("batchSaveBtn").style.display = "inline-block";
-
+    
     const currentFile = document.getElementById("fileInput").value.trim();
     document.getElementById("currentEditorFileLabel").textContent = currentFile ? `Archivo: ${currentFile}` : "Todas las coincidencias";
-
+    
     loadEditorPage();
-  }
-}
-
-// Helper function to securely replace text in entries using the Supabase function
-async function replaceTextInEntries(p_find, p_replace, p_file = null) {
-  if (!p_find) return 0;
-
-  document.getElementById("loadingMsg").style.display = "block";
-
-  try {
-    // Use the secure batch_replace_text function from Supabase
-    const { data, error } = await supabase_cli.rpc('batch_replace_text', {
-      p_find: p_find,
-      p_replace: p_replace,
-      p_file: p_file,
-      p_limit: 200
-    });
-
-    if (error) throw error;
-
-    const count = data;
-    document.getElementById("loadingMsg").style.display = "none";
-    return count;
-  } catch (err) {
-    document.getElementById("loadingMsg").style.display = "none";
-    throw err;
   }
 }
 
@@ -912,7 +661,7 @@ function renderRows(rows) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td style="text-align:center;"><input type="checkbox" class="row-checkbox" data-index="${index}" /></td>
-      <td><strong>${row.entry_id}</strong><br><small class="file-link" onclick="document.getElementById('fileInput').value = '${escapeHtml(row.file).replace(/'/g, "\\'")}'; switchView('editor');">${escapeHtml(row.file)}</small></td>
+      <td><strong>${row.entry_id}</strong><br><small class="file-link">${escapeHtml(row.file)}</small></td>
       <td class="ref">${escapeHtml(row.ja)}</td>
       <td class="ref">${escapeHtml(row.en)}</td>
       <td class="es-cell">
@@ -927,15 +676,10 @@ function renderRows(rows) {
 
     const checkbox = tr.querySelector(".row-checkbox");
     checkbox.addEventListener("change", updateBatchSaveButton);
-
+    
     const textarea = tr.querySelector(".es-input");
     const statsDiv = tr.querySelector(".line-stats");
-    // Auto-check checkbox when user starts typing (easy editing feature)
-    textarea.addEventListener("input", () => {
-      renderLineStats(statsDiv, textarea);
-      checkbox.checked = true;
-      updateBatchSaveButton();
-    });
+    textarea.addEventListener("input", () => renderLineStats(statsDiv, textarea));
     renderLineStats(statsDiv, textarea);
 
     const histBtn = tr.querySelector(".history-btn");
@@ -963,7 +707,7 @@ function updateBatchSaveButton() {
   });
 }
 
-// Batch save with timeout protection
+// CORRECCIÓN: Actualización directa por ID (evita error de upsert en columnas IDENTITY)
 document.getElementById("batchSaveBtn").addEventListener("click", async () => {
   const selectedCheckboxes = document.querySelectorAll(".row-checkbox:checked");
   if (selectedCheckboxes.length === 0) return;
@@ -971,48 +715,19 @@ document.getElementById("batchSaveBtn").addEventListener("click", async () => {
   document.getElementById("loadingMsg").style.display = "block";
 
   try {
-    // Get current user's identifier for updated_by field
-    const updatedBy = currentProfile ? currentProfile.display_name : null;
-
-    // Process each selected row individually with timeout protection
     for (const cb of selectedCheckboxes) {
       const idx = parseInt(cb.getAttribute("data-index"), 10);
       const row = loadedRowsData[idx];
       const tr = cb.closest("tr");
       const newEs = tr.querySelector(".es-input").value;
 
-      // Create a promise that rejects after 15 seconds
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Operación timeout (15s)')), 15000);
-      });
+      const { error } = await supabase_cli
+        .from("entries")
+        .update({ es: newEs, status: "traducido", updated_at: new Date().toISOString() })
+        .eq("id", row.id);
 
-      try {
-        // Race the update operation against the timeout
-        const resultPromise = supabase_cli
-          .from("entries")
-          .update({
-            es: newEs,
-            status: "traducido",
-            updated_by: updatedBy,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", row.id);
-
-        const { error } = await Promise.race([
-          resultPromise,
-          timeoutPromise
-        ]);
-
-        if (error) throw error;
-      } catch (err) {
-        if (err.message === 'Operación timeout (15s)') {
-          throw err;
-        }
-        // Wrap any other errors to provide context
-        throw new Error(`Error al guardar entrada ${row.entry_id}: ${err.message}`);
-      }
+      if (error) throw error;
     }
-
     await loadEditorPage();
   } catch (err) {
     alert("Error al guardar: " + err.message);
@@ -1023,72 +738,48 @@ document.getElementById("batchSaveBtn").addEventListener("click", async () => {
 
 // ═══════════════════ FIND & REPLACE MASIVO ═══════════════════
 
-// Helper function to preview replace using the secure function
-async function previewReplace(p_find, p_replace, p_file = null) {
-  if (!p_find) return [];
-
-  try {
-    // Get current filter values from advanced search
-    const searchVal = document.getElementById("search").value.trim();
-    const statusVal = document.getElementById("statusSelect").value || null;
-    const matchType = document.getElementById("advMatchType").value;
-
-    const { data, error } = await supabase_cli.rpc('preview_batch_replace', {
-      p_find: p_find,
-      p_replace: p_replace,
-      p_file: p_file,
-      p_search: searchVal,
-      p_status: statusVal,
-      p_match_type: matchType,
-      p_limit: 100, // Preview more rows
-      p_offset: 0
-    });
-
-    if (error) throw error;
-    return data;
-  } catch (err) {
-    throw err;
-  }
-}
-
 document.getElementById("frPreviewBtn").addEventListener("click", async () => {
   const findStr = document.getElementById("frFindText").value.trim();
   const replaceStr = document.getElementById("frReplaceText").value;
-
+  
   if (!findStr) {
     alert("Ingresa un texto para buscar.");
     return;
   }
 
-  const fileVal = document.getElementById("fileInput").value.trim() || null;
+  // Búsqueda en los elementos actualmente visibles/cargados en la vista actual
+  pendingFrUpdates = [];
+  loadedRowsData.forEach(row => {
+    const tr = document.querySelector(`.es-input[data-index="${loadedRowsData.indexOf(row)}"]`);
+    const currentEs = tr ? tr.value : (row.es || "");
+    
+    if (currentEs.includes(findStr)) {
+      const newEs = currentEs.replaceAll(findStr, replaceStr);
+      pendingFrUpdates.push({
+        id: row.id,
+        entry_id: row.entry_id,
+        old_es: currentEs,
+        es: newEs
+      });
+    }
+  });
 
-  document.getElementById("loadingMsg").style.display = "block";
+  const tbody = document.getElementById("frPreviewTbody");
+  tbody.innerHTML = "";
+  
+  document.getElementById("frMatchCountMsg").textContent = `Se encontraron ${pendingFrUpdates.length} coincidencias en la vista actual.`;
 
-  try {
-    // Use the secure preview function
-    const previewData = await previewReplace(findStr, replaceStr, fileVal);
+  pendingFrUpdates.forEach(item => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${item.entry_id}</strong></td>
+      <td style="color:var(--text-muted);">${escapeHtml(item.old_es)}</td>
+      <td style="color:var(--ok); font-weight:600;">${escapeHtml(item.es)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
 
-    const tbody = document.getElementById("frPreviewTbody");
-    tbody.innerHTML = "";
-
-    document.getElementById("frMatchCountMsg").textContent = `Se encontraron ${previewData.length} coincidencias (mostrando primeras 100).`;
-
-    previewData.forEach(item => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td><strong>${item.entry_id}</strong></td>
-        <td style="color:var(--text-muted);">${escapeHtml(item.es || "")}</td>
-        <td style="color:var(--ok); font-weight:600;">${escapeHtml(item.new_es || "")}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById("frModalOverlay").classList.add("open");
-  } catch (err) {
-    alert("Error al previsualizar: " + err.message);
-  } finally {
-    document.getElementById("loadingMsg").style.display = "none";
-  }
+  document.getElementById("frModalOverlay").classList.add("open");
 });
 
 document.getElementById("closeFrModal").addEventListener("click", () => {
@@ -1099,51 +790,23 @@ document.getElementById("cancelFrBtn").addEventListener("click", () => {
 });
 
 document.getElementById("confirmFrBtn").addEventListener("click", async () => {
-  const findStr = document.getElementById("frFindText").value.trim();
-  const replaceStr = document.getElementById("frReplaceText").value;
-
-  if (!findStr) {
-    alert("Ingresa un texto para buscar.");
-    return;
-  }
-
-  // Get current filter values from advanced search
-  const searchVal = document.getElementById("search").value.trim();
-  const statusVal = document.getElementById("statusSelect").value || null;
-  const matchType = document.getElementById("advMatchType").value;
-
-  const fileVal = document.getElementById("fileInput").value.trim() || null;
+  if (pendingFrUpdates.length === 0) return;
 
   document.getElementById("loadingMsg").style.display = "block";
 
   try {
-    // Use the secure batch replace function repeatedly until no more matches
-    let totalReplaced = 0;
-
-    while (true) {
-      const { data: count, error } = await supabase_cli.rpc('batch_replace_text', {
-        p_find: findStr,
-        p_replace: replaceStr,
-        p_file: fileVal,
-        p_search: searchVal,
-        p_status: statusVal,
-        p_match_type: matchType,
-        p_limit: 200
-      });
+    for (const item of pendingFrUpdates) {
+      const { error } = await supabase_cli
+        .from("entries")
+        .update({ es: item.es, status: "traducido", updated_at: new Date().toISOString() })
+        .eq("id", item.id);
 
       if (error) throw error;
-
-      if (count === 0) break; // No more matches
-
-      totalReplaced += count;
     }
-
     document.getElementById("frModalOverlay").classList.remove("open");
-    await loadEditorPage(); // Refresh the data
-
-    alert(`Reemplazo completado: ${totalReplaced} entradas actualizadas.`);
+    await loadEditorPage();
   } catch (err) {
-    alert("Error al aplicar reemplazo: " + err.message);
+    alert("Error al aplicar reemplazo masivo: " + err.message);
   } finally {
     document.getElementById("loadingMsg").style.display = "none";
   }
@@ -1159,7 +822,7 @@ async function openHistoryModal(entryId) {
 
   // Consulta limpia sin joins automáticos de foreign keys para evitar errores 404 de PostgREST
   const { data, error } = await supabase_cli
-    .from("entry_history")
+    .from("history")
     .select("old_es, new_es, changed_at")
     .eq("entry_id", entryId)
     .order("changed_at", { ascending: false });
@@ -1184,299 +847,6 @@ document.getElementById("closeHistoryModal").addEventListener("click", () => {
   document.getElementById("historyModalOverlay").classList.remove("open");
 });
 
-// Sugerencias Modal Functions
-async function showSuggestionsModal() {
-  const overlay = document.getElementById("suggestionsModalOverlay");
-  const statsEl = document.getElementById("suggestionsStats");
-  const tbody = document.getElementById("suggestionsTbody");
-
-  overlay.classList.add("open");
-  statsEl.textContent = "Cargando sugerencias...";
-  tbody.innerHTML = "<tr><td colspan='6'>Cargando...</td></tr>";
-
-  try {
-    // Get suggestions with stats
-    const { data: suggestions, error } = await supabase_cli
-      .from("translation_proposals")
-      .select(`
-        id,
-        entry_ref_id,
-        proposed_es,
-        status,
-        created_at,
-        entries!inner(file, entry_id, en),
-        profiles!proposed_by(display_name)
-      `)
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    // Stats
-    const pendingCount = suggestions.filter(s => s.status === "pending").length;
-    const approvedCount = suggestions.filter(s => s.status === "approved").length;
-    const rejectedCount = suggestions.filter(s => s.status === "rejected").length;
-    statsEl.textContent = `Total: ${suggestions.length} | Pendientes: ${pendingCount} | Aprobadas: ${approvedCount} | Rechazadas: ${rejectedCount}`;
-
-    // Render suggestions
-    if (suggestions.length === 0) {
-      tbody.innerHTML = "<tr><td colspan='6'>No hay sugerencias pendientes.</td></tr>";
-      return;
-    }
-
-    tbody.innerHTML = suggestions.map(s => `
-      <tr>
-        <td>${s.id}</td>
-        <td>${s.entries.file} - ${s.entries.entry_id}</td>
-        <td>${escapeHtml(s.entries.en || "")}</td>
-        <td>${escapeHtml(s.proposed_es || "")}</td>
-        <td>
-          <span class="status-badge ${s.status}">${s.status}</span>
-        </td>
-        <td>
-          ${s.status === "pending" ? `
-            <button class="approve-suggestion-btn" data-id="${s.id}" data-entry-id="${s.entry_ref_id}" data-proposed-es="${escapeHtml(s.proposed_es)}" data-proposed-by="${s.proposed_by}">Aprobar</button>
-            <button class="reject-suggestion-btn" data-id="${s.id}" data-proposed-by="${s.proposed_by}">Rechazar</button>
-          ` : ""}
-        </td>
-      </tr>
-    `).join("");
-
-    // Add event listeners to buttons
-    tbody.querySelectorAll(".approve-suggestion-btn").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        const suggestionId = e.target.dataset.id;
-        const entryId = e.target.dataset.entryId;
-        const proposedEs = e.target.dataset.proposedEs;
-        const proposedBy = e.target.dataset.proposedBy;
-
-        if (confirm("¿Está seguro de que desea aprobar esta sugerencia?")) {
-          try {
-            const { error } = await supabase_cli.rpc('approve_proposal', {
-              p_proposal_id: parseInt(suggestionId),
-              p_approve: true
-            });
-
-            if (error) throw error;
-
-            alert("Sugerencia aprobada exitosamente");
-            await showSuggestionsModal(); // Refresh
-          } catch (err) {
-            alert("Error al aprobar sugerencia: " + err.message);
-          }
-        }
-      });
-    });
-
-    tbody.querySelectorAll(".reject-suggestion-btn").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        const suggestionId = e.target.dataset.id;
-        const proposedBy = e.target.dataset.proposedBy;
-
-        if (confirm("¿Está seguro de que desea rechazar esta sugerencia?")) {
-          try {
-            const { error } = await supabase_cli.rpc('approve_proposal', {
-              p_proposal_id: parseInt(suggestionId),
-              p_approve: false
-            });
-
-            if (error) throw error;
-
-            alert("Sugerencia rechazada exitosamente");
-            await showSuggestionsModal(); // Refresh
-          } catch (err) {
-            alert("Error al rechazar sugerencia: " + err.message);
-          }
-        }
-      });
-    });
-
-  } catch (err) {
-    statsEl.textContent = "Error al cargar sugerencias";
-    tbody.innerHTML = `<tr><td colspan='6'>Error: ${err.message}</td></tr>`;
-  }
-}
-
-// Contribuciones Modal Functions
-async function showContributionsModal() {
-  const overlay = document.getElementById("contributionsModalOverlay");
-  const statsEl = document.getElementById("contributionsStats");
-  const tbody = document.getElementById("contributionsTbody");
-
-  overlay.classList.add("open");
-  statsEl.textContent = "Cargando historial de contribuciones...";
-  tbody.innerHTML = "<tr><td colspan='4'>Cargando...</td></tr>";
-
-  try {
-    // Get user's contributions from entry_history
-    const { data: contributions, error } = await supabase_cli
-      .from("entry_history")
-      .select(`
-        id,
-        changed_at,
-        old_es,
-        new_es,
-        entries!inner(file, entry_id)
-      `)
-      .order("changed_at", { ascending: false })
-      .limit(100);
-
-    if (error) throw error;
-
-    statsEl.textContent = `Total de contribuciones: ${contributions.length}`;
-
-    // Render contributions
-    if (contributions.length === 0) {
-      tbody.innerHTML = "<tr><td colspan='4'>No hay contribuciones registradas.</td></tr>";
-      return;
-    }
-
-    tbody.innerHTML = contributions.map(c => {
-      const change = c.old_es === "" || c.old_es === null
-        ? `Nuevo: "${escapeHtml(c.new_es || "")}"`
-        : `Cambio: "${escapeHtml(c.old_es || "")}" → "${escapeHtml(c.new_es || "")}"`;
-
-      return `
-        <tr>
-          <td>${new Date(c.changed_at).toLocaleString()}</td>
-          <td>${c.entries.file} - ${c.entries.entry_id}</td>
-          <td>${change}</td>
-          <td>
-            <span class="status-badge">Editado</span>
-          </td>
-        </tr>
-      `;
-    }).join("");
-
-  } catch (err) {
-    statsEl.textContent = "Error al cargar contribuciones";
-    tbody.innerHTML = `<tr><td colspan='4'>Error: ${err.message}</td></tr>`;
-  }
-}
-
-// Pending Users Modal Functions
-async function showPendingUsersModal() {
-  const overlay = document.getElementById("pendingUsersModalOverlay");
-  const statsEl = document.getElementById("pendingUsersStats");
-  const tbody = document.getElementById("pendingUsersTbody");
-
-  overlay.classList.add("open");
-  statsEl.textContent = "Cargando usuarios pendientes...";
-  tbody.innerHTML = "<tr><td colspan='4'>Cargando...</td></tr>";
-
-  try {
-    // Get pending profiles
-    const { data: pendingUsers, error } = await supabase_cli
-      .from("profiles")
-      .select(`
-        id,
-        display_name,
-        created_at,
-        auth_users!inner(email)
-      `)
-      .eq("role", "pending")
-      .order("created_at", { ascending: false });
-
-    if (error) throw error;
-
-    statsEl.textContent = `Total de usuarios pendientes: ${pendingUsers.length}`;
-
-    // Render pending users
-    if (pendingUsers.length === 0) {
-      tbody.innerHTML = "<tr><td colspan='4'>No hay usuarios pendientes de aprobación.</td></tr>";
-      return;
-    }
-
-    tbody.innerHTML = pendingUsers.map(u => `
-      <tr>
-        <td>${new Date(u.created_at).toLocaleString()}</td>
-        <td>${u.display_name || u.auth_users.email}</td>
-        <td>
-          <span class="status-badge pendiente">${u.role}</span>
-        </td>
-        <td>
-          <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-            <button class="make-suggester-btn" data-id="${u.id}" data-name="${u.display_name || u.auth_users.email}">Hacer Sugeridor</button>
-            <button class="make-editor-btn" data-id="${u.id}" data-name="${u.display_name || u.auth_users.email}">Hacer Editor</button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
-
-    // Add event listeners to buttons
-    tbody.querySelectorAll(".make-suggester-btn").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        const userId = e.target.dataset.id;
-        const userName = e.target.dataset.name;
-
-        if (confirm(`¿Está seguro de que desea hacer a "${userName}" un sugeridor?`)) {
-          try {
-            const { error } = await supabase_cli
-              .from("profiles")
-              .update({ role: "suggester" })
-              .eq("id", userId);
-
-            if (error) throw error;
-
-            alert(`Usuario "${userName}" ahora es sugeridor`);
-            await showPendingUsersModal(); // Refresh
-          } catch (err) {
-            alert("Error al actualizar rol: " + err.message);
-          }
-        }
-      });
-    });
-
-    tbody.querySelectorAll(".make-editor-btn").forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        const userId = e.target.dataset.id;
-        const userName = e.target.dataset.name;
-
-        if (confirm(`¿Está seguro de que desea hacer a "${userName}" un editor?`)) {
-          try {
-            const { error } = await supabase_cli
-              .from("profiles")
-              .update({ role: "editor" })
-              .eq("id", userId);
-
-            if (error) throw error;
-
-            alert(`Usuario "${userName}" ahora es editor`);
-            await showPendingUsersModal(); // Refresh
-          } catch (err) {
-            alert("Error al actualizar rol: " + err.message);
-          }
-        }
-      });
-    });
-
-  } catch (err) {
-    statsEl.textContent = "Error al cargar usuarios pendientes";
-    tbody.innerHTML = `<tr><td colspan='4'>Error: ${err.message}</td></tr>`;
-  }
-}
-
-// Close buttons for modals
-document.getElementById("closeSuggestionsModal").addEventListener("click", () => {
-  document.getElementById("suggestionsModalOverlay").classList.remove("open");
-});
-document.getElementById("closeSuggestionsBtn").addEventListener("click", () => {
-  document.getElementById("suggestionsModalOverlay").classList.remove("open");
-});
-
-document.getElementById("closeContributionsModal").addEventListener("click", () => {
-  document.getElementById("contributionsModalOverlay").classList.remove("open");
-});
-document.getElementById("closeContributionsBtn").addEventListener("click", () => {
-  document.getElementById("contributionsModalOverlay").classList.remove("open");
-});
-
-document.getElementById("closePendingUsersModal").addEventListener("click", () => {
-  document.getElementById("pendingUsersModalOverlay").classList.remove("open");
-});
-document.getElementById("closePendingUsersBtn").addEventListener("click", () => {
-  document.getElementById("pendingUsersModalOverlay").classList.remove("open");
-});
-
 // ═══════════════════ PAGINACIÓN Y EVENTOS ═══════════════════
 
 function renderPager() {
@@ -1487,37 +857,7 @@ function renderPager() {
   const totalPages = Math.ceil(totalCount / pageSize);
   if (totalPages <= 1) return;
 
-  const BLOCK_SIZE = 15; // Number of pages to show in each block
-  const currentBlock = Math.floor(currentPage / BLOCK_SIZE);
-  const startBlock = currentBlock * BLOCK_SIZE;
-  const endBlock = Math.min(startBlock + BLOCK_SIZE, totalPages);
-
-  // Previous page button
-  if (currentPage > 0) {
-    const prevBtn = document.createElement("button");
-    prevBtn.textContent = "« Anterior";
-    prevBtn.addEventListener("click", () => {
-      currentPage = Math.max(0, currentPage - 1);
-      if (currentMode === "dashboard") renderDashboardPage();
-      else loadEditorPage();
-    });
-    pager.appendChild(prevBtn);
-  }
-
-  // Previous block button
-  if (currentBlock > 0) {
-    const prevBlockBtn = document.createElement("button");
-    prevBlockBtn.textContent = "‹ Bloque";
-    prevBlockBtn.addEventListener("click", () => {
-      currentPage = Math.max(0, startBlock - 1);
-      if (currentMode === "dashboard") renderDashboardPage();
-      else loadEditorPage();
-    });
-    pager.appendChild(prevBlockBtn);
-  }
-
-  // Page numbers in current block
-  for (let i = startBlock; i < endBlock; i++) {
+  for (let i = 0; i < totalPages; i++) {
     const btn = document.createElement("button");
     btn.textContent = (i + 1).toString();
     if (i === currentPage) btn.className = "current-page";
@@ -1527,30 +867,6 @@ function renderPager() {
       else loadEditorPage();
     });
     pager.appendChild(btn);
-  }
-
-  // Next block button
-  if (endBlock < totalPages) {
-    const nextBlockBtn = document.createElement("button");
-    nextBlockBtn.textContent = "Bloque ›";
-    nextBlockBtn.addEventListener("click", () => {
-      currentPage = Math.min(totalPages - 1, endBlock + 1);
-      if (currentMode === "dashboard") renderDashboardPage();
-      else loadEditorPage();
-    });
-    pager.appendChild(nextBlockBtn);
-  }
-
-  // Next page button
-  if (currentPage < totalPages - 1) {
-    const nextBtn = document.createElement("button");
-    nextBtn.textContent = "Siguiente »";
-    nextBtn.addEventListener("click", () => {
-      currentPage = Math.min(totalPages - 1, currentPage + 1);
-      if (currentMode === "dashboard") renderDashboardPage();
-      else loadEditorPage();
-    });
-    pager.appendChild(nextBtn);
   }
 }
 
