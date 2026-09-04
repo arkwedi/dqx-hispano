@@ -367,7 +367,7 @@
 <main>
   <div id="rules">
     <b>Reglas de traducción al español</b>
-    El texto debe verse igual que el resultado de normalizar a ASCII (sin eñe, sin vocales acentuadas, sin ¿ ¡ ni caracteres especiales) para prevenir fallos en el juego.
+    El texto debe verse igual que el resultado de normalizar a ASCII (sin eñe, sin vocales acentuadas, sin ¿ ¡ ni caracteres especiales) para prevenir fallos en el juego.[cite: 7]
   </div>
 
   <div id="advSearchPanel">
@@ -516,8 +516,11 @@
   </div>
 </div>
 
+</body>
+</html>
+
 <footer>
-  Repositorio del proyecto: <a href="https://github.com/arkwedi/dqx-hispano" target="_blank" rel="noopener">https://github.com/arkwedi/dqx-hispano</a>
+  Repositorio del proyecto: <a href="https://github.com/arkwedi/dqx-hispano" target="_blank" rel="noopener">https://github.com/arkwedi/dqx-hispano</a>[cite: 7]
 </footer>
 
 </div>
@@ -554,6 +557,7 @@
   </div>
 </div>
 
+</body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://nchdmvlabsgozmyvjspb.supabase.co";
@@ -570,18 +574,12 @@ let currentPage = 0;
 let totalCount = 0;
 let loadedRowsData = [];
 let allFilesProgress = [];
-let lastCountFiltersKey = null;
 let currentProfile = null;
 let currentSortMode = "name_asc";
 let pendingFrUpdates = [];
 
 function escapeHtml(s) {
-  return (s || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  return (s || "").replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
 }
 
 // ═══════════════════ AUTH ═══════════════════
@@ -883,10 +881,7 @@ async function loadEditorPage() {
   const searchVal = document.getElementById("search").value.trim();
   const matchType = document.getElementById("advMatchType").value;
 
-  const filtersKey = JSON.stringify([searchVal, fileVal, statusVal, matchType]);
-  const filtersChanged = filtersKey !== lastCountFiltersKey;
-
-  const pagePromise = supabase_cli.rpc("search_entries_page", {
+  const { data, error } = await supabase_cli.rpc("search_entries", {
     p_search: searchVal,
     p_file: fileVal,
     p_status: statusVal,
@@ -895,33 +890,12 @@ async function loadEditorPage() {
     p_offset: currentPage * EDITOR_PAGE_SIZE
   });
 
-  // El conteo total solo se vuelve a pedir cuando cambian los filtros/búsqueda,
-  // no en cada cambio de página — evita recalcularlo de más en cada click.
-  const countPromise = filtersChanged
-    ? supabase_cli.rpc("search_entries_count", {
-        p_search: searchVal,
-        p_file: fileVal,
-        p_status: statusVal,
-        p_match_type: matchType
-      })
-    : Promise.resolve(null);
-
-  const [{ data, error }, countResult] = await Promise.all([pagePromise, countPromise]);
-
   document.getElementById("loadingMsg").style.display = "none";
 
   if (error) { alert("Error al buscar: " + error.message); return; }
 
   loadedRowsData = data || [];
-
-  if (filtersChanged) {
-    if (countResult && countResult.error) {
-      alert("Error al contar resultados: " + countResult.error.message);
-    } else {
-      totalCount = (countResult && countResult.data) || 0;
-      lastCountFiltersKey = filtersKey;
-    }
-  }
+  totalCount = loadedRowsData.length > 0 ? parseInt(loadedRowsData[0].total_count, 10) : 0;
 
   renderRows(loadedRowsData);
   renderPager();
@@ -965,7 +939,7 @@ function renderRows(rows) {
     renderLineStats(statsDiv, textarea);
 
     const histBtn = tr.querySelector(".history-btn");
-    histBtn.addEventListener("click", () => openHistoryModal(row.file, row.entry_id));
+    histBtn.addEventListener("click", () => openHistoryModal(row.id));
 
     tbody.appendChild(tr);
   });
@@ -999,9 +973,6 @@ document.getElementById("batchSaveBtn").addEventListener("click", async () => {
   try {
     // Get current user's identifier for updated_by field
     const updatedBy = currentProfile ? currentProfile.display_name : null;
-    const isSuggester = currentProfile && currentProfile.role === "suggester";
-    let proposalsSent = 0;
-    let entriesSaved = 0;
 
     // Process each selected row individually with timeout protection
     for (const cb of selectedCheckboxes) {
@@ -1016,54 +987,23 @@ document.getElementById("batchSaveBtn").addEventListener("click", async () => {
       });
 
       try {
-        if (isSuggester) {
-          // Un suggester no puede escribir directo en entries (bloqueado por RLS).
-          // Su cambio se manda como propuesta pendiente de revisión.
-          const resultPromise = supabase_cli
-            .from("translation_proposals")
-            .insert({
-              entry_ref_id: row.id,
-              proposed_es: newEs,
-              proposed_by: currentProfile.id
-            })
-            .select("id");
+        // Race the update operation against the timeout
+        const resultPromise = supabase_cli
+          .from("entries")
+          .update({
+            es: newEs,
+            status: "traducido",
+            updated_by: updatedBy,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", row.id);
 
-          const { data: inserted, error } = await Promise.race([
-            resultPromise,
-            timeoutPromise
-          ]);
+        const { error } = await Promise.race([
+          resultPromise,
+          timeoutPromise
+        ]);
 
-          if (error) throw error;
-          if (!inserted || inserted.length === 0) {
-            throw new Error("No se pudo enviar la propuesta (posible restricción de permisos para tu rol).");
-          }
-          proposalsSent++;
-        } else {
-          // Race the update operation against the timeout
-          const resultPromise = supabase_cli
-            .from("entries")
-            .update({
-              es: newEs,
-              status: "traducido",
-              updated_by: updatedBy,
-              updated_at: new Date().toISOString()
-            })
-            .eq("id", row.id)
-            .select("id");
-
-          const { data: updatedRows, error } = await Promise.race([
-            resultPromise,
-            timeoutPromise
-          ]);
-
-          if (error) throw error;
-          if (!updatedRows || updatedRows.length === 0) {
-            // Supabase/RLS puede bloquear el UPDATE sin devolver error (0 filas afectadas).
-            // Sin este chequeo, esto se reportaría como "guardado" sin haber guardado nada.
-            throw new Error("No se guardó ningún cambio (posible restricción de permisos para tu rol).");
-          }
-          entriesSaved++;
-        }
+        if (error) throw error;
       } catch (err) {
         if (err.message === 'Operación timeout (15s)') {
           throw err;
@@ -1071,10 +1011,6 @@ document.getElementById("batchSaveBtn").addEventListener("click", async () => {
         // Wrap any other errors to provide context
         throw new Error(`Error al guardar entrada ${row.entry_id}: ${err.message}`);
       }
-    }
-
-    if (isSuggester) {
-      alert(`${proposalsSent} propuesta(s) enviada(s) para revisión.`);
     }
 
     await loadEditorPage();
@@ -1215,7 +1151,7 @@ document.getElementById("confirmFrBtn").addEventListener("click", async () => {
 
 // ═══════════════════ HISTORIAL ═══════════════════
 
-async function openHistoryModal(fileVal, entryId) {
+async function openHistoryModal(entryId) {
   const overlay = document.getElementById("historyModalOverlay");
   const body = document.getElementById("historyModalBody");
   overlay.classList.add("open");
@@ -1225,7 +1161,6 @@ async function openHistoryModal(fileVal, entryId) {
   const { data, error } = await supabase_cli
     .from("entry_history")
     .select("old_es, new_es, changed_at")
-    .eq("file", fileVal)
     .eq("entry_id", entryId)
     .order("changed_at", { ascending: false });
 
@@ -1372,14 +1307,16 @@ async function showContributionsModal() {
   tbody.innerHTML = "<tr><td colspan='4'>Cargando...</td></tr>";
 
   try {
-    // entry_history ya guarda file y entry_id directamente (no requiere join con entries).
-    // Se filtra por changed_by para mostrar solo las contribuciones del usuario actual.
-    const myName = currentProfile ? currentProfile.display_name : null;
-
+    // Get user's contributions from entry_history
     const { data: contributions, error } = await supabase_cli
       .from("entry_history")
-      .select("id, file, entry_id, changed_at, old_es, new_es")
-      .eq("changed_by", myName)
+      .select(`
+        id,
+        changed_at,
+        old_es,
+        new_es,
+        entries!inner(file, entry_id)
+      `)
       .order("changed_at", { ascending: false })
       .limit(100);
 
@@ -1401,7 +1338,7 @@ async function showContributionsModal() {
       return `
         <tr>
           <td>${new Date(c.changed_at).toLocaleString()}</td>
-          <td>${escapeHtml(c.file)} - ${escapeHtml(c.entry_id)}</td>
+          <td>${c.entries.file} - ${c.entries.entry_id}</td>
           <td>${change}</td>
           <td>
             <span class="status-badge">Editado</span>
