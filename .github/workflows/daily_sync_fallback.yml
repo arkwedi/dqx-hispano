@@ -67,7 +67,7 @@ jobs:
       - name: Preparar carpeta de trabajo (usando snapshot en vez de PC)
         shell: powershell
         run: |
-          $EtpWorkDir = "${{ vars.ETP_WORK_DIR_FALLBACK }}"  # ej: D:\a\dqx-hispano\dqx-hispano\_work
+          $EtpWorkDir = "${{ github.workspace }}\_work_fallback"  # ej: D:\a\dqx-hispano\dqx-hispano\_work
           New-Item -ItemType Directory -Force -Path $EtpWorkDir | Out-Null
           Copy-Item source_cache\etp             (Join-Path $EtpWorkDir "etp")             -Recurse -Force
           Copy-Item source_cache\rps             (Join-Path $EtpWorkDir "rps")             -Recurse -Force
@@ -78,8 +78,8 @@ jobs:
         shell: powershell
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          ETP_EXE_PATH: "${{ github.workspace }}\\cached_etp\\etp.exe"
-          ETP_WORK_DIR: ${{ vars.ETP_WORK_DIR_FALLBACK }}
+          ETP_EXE_PATH: "${{ github.workspace }}\cached_etp\etp.exe"
+          ETP_WORK_DIR: ${{ github.workspace }}\_work_fallback
           CLARITY_GLOSSARY_DB_PATH: ${{ vars.CLARITY_GLOSSARY_DB_PATH }}
           CLARITY_DIALOG_DB_PATH: ${{ vars.CLARITY_DIALOG_DB_PATH }}
         run: ./run_daily_pipeline_fallback.ps1
@@ -88,8 +88,8 @@ jobs:
         if: success()
         shell: powershell
         run: >
-          python scripts/build_clpk.py "${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/common.zip"
-          --output "${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/espanol.clpk"
+          python scripts/build_clpk.py "${{ github.workspace }}\_work_fallback/etp_output/common.zip"
+          --output "${{ github.workspace }}\_work_fallback/etp_output/espanol.clpk"
           --author "dqx-hispano"
           --language es
           --download-url "https://github.com/${{ github.repository }}/releases/download/nightly/espanol.clpk"
@@ -103,6 +103,6 @@ jobs:
           body: "Ultima corrida exitosa (fallback): ${{ github.run_id }}"
           prerelease: true
           files: |
-            ${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/espanol.clpk
-            ${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/paste_in_dqxclarity.zip
-            ${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/readme.md
+            ${{ github.workspace }}\_work_fallback/etp_output/espanol.clpk
+            ${{ github.workspace }}\_work_fallback/etp_output/paste_in_dqxclarity.zip
+            ${{ github.workspace }}\_work_fallback/etp_output/readme.md
