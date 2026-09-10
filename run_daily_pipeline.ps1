@@ -104,6 +104,22 @@ if (-not (Test-Path $RawJsonFolder) -or (Get-ChildItem $RawJsonFolder -Filter *.
 $jsonFileCount = (Get-ChildItem $RawJsonFolder -Filter *.json -Recurse).Count
 Write-Host "OK: $jsonFileCount JSON de origen en $RawJsonFolder"
 
+# --- Snapshot para runs de respaldo (fallback) ---
+# En este punto json\_lang\en todavia tiene el EN recien extraido/mergeado
+# (Paso 5 lo va a sobreescribir con ES mas adelante), y etp\ + rps\ ya
+# tienen la estructura que "etp.exe rebuild" necesita como base. Guardamos
+# una copia de estos tres antes de que se pierdan, para que un run sin PC
+# encendida (sin etp.exe / sin el juego) pueda saltarse los Pasos 1-2 y
+# reusar esto como "la ultima copia buena".
+Write-Host "`n=== Guardando snapshot de origen para runs de respaldo (source_cache) ===" -ForegroundColor Cyan
+$SourceCacheDir = Join-Path $EtpWorkDir "source_cache"
+if (Test-Path $SourceCacheDir) { Remove-Item $SourceCacheDir -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $SourceCacheDir | Out-Null
+Copy-Item $RawJsonFolder (Join-Path $SourceCacheDir "json_lang_en") -Recurse
+Copy-Item (Join-Path $EtpWorkDir "etp") (Join-Path $SourceCacheDir "etp") -Recurse
+Copy-Item (Join-Path $EtpWorkDir "rps") (Join-Path $SourceCacheDir "rps") -Recurse
+Write-Host "Snapshot guardado en $SourceCacheDir" -ForegroundColor Green
+
 Write-Host "`n=== Paso 3: construir snapshot local (build_translation_db.py) ===" -ForegroundColor Cyan
 python scripts\build_translation_db.py $RawJsonFolder --output $LocalDb --overwrite
 if ($LASTEXITCODE -ne 0) { Write-Error "build_translation_db.py fallo"; exit 1 }
@@ -196,6 +212,12 @@ Write-Host "paste_in_dqxclarity.zip generado en: $PasteZipOutput" -ForegroundCol
 # Copiamos el readme del repo (estatico, lo editas tu directamente en el
 # repositorio) junto al resto de los entregables de esta corrida.
 Copy-Item (Join-Path $PSScriptRoot "readme.md") (Join-Path $EtpWorkDir "etp_output\readme.md") -Force
+
+Write-Host "`n=== Paso 9: comprimir source_cache (snapshot para fallback) ===" -ForegroundColor Cyan
+$SourceCacheZip = Join-Path $EtpWorkDir "source_cache.zip"
+if (Test-Path $SourceCacheZip) { Remove-Item $SourceCacheZip }
+Compress-Archive -Path (Join-Path $SourceCacheDir "*") -DestinationPath $SourceCacheZip
+Write-Host "source_cache.zip generado en: $SourceCacheZip" -ForegroundColor Green
 
 Write-Host "`n=== Listo ===" -ForegroundColor Green
 Write-Host "common.zip generado en: $CommonZipOutput"

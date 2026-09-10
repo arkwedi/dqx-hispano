@@ -17,6 +17,28 @@ jobs:
     runs-on: self-hosted   # your own PC, registered as a runner for this repo
     environment: DATABASE_URL
     steps:
+      - name: Cache de etp.exe (para el runner de respaldo, NO publico)
+        # actions/cache guarda esto dentro de la infraestructura de Actions,
+        # no como asset descargable del repo -- evita redistribuir la
+        # herramienta de terceros publicamente. Si actualizas la version de
+        # etp.exe, sube el numero en la key (etp-exe-v1 -> v2) para forzar
+        # que se vuelva a guardar.
+        uses: actions/cache@v4
+        with:
+          path: cached_etp
+          key: etp-exe-v1
+
+      - name: Copiar etp.exe al cache si todavia no esta
+        shell: powershell
+        run: |
+          if (-not (Test-Path "cached_etp\etp.exe")) {
+            New-Item -ItemType Directory -Force -Path cached_etp | Out-Null
+            Copy-Item "${{ vars.ETP_EXE_PATH }}" "cached_etp\etp.exe" -Force
+            Write-Host "etp.exe copiado al cache (primera vez o key nueva)"
+          } else {
+            Write-Host "etp.exe ya estaba en cache, no se toca"
+          }
+
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
@@ -69,3 +91,20 @@ jobs:
             ${{ vars.ETP_WORK_DIR }}/etp_output/espanol.clpk
             ${{ vars.ETP_WORK_DIR }}/etp_output/paste_in_dqxclarity.zip
             ${{ vars.ETP_WORK_DIR }}/etp_output/readme.md
+
+      # Publica el snapshot EN + etp/rps de ESTA corrida exitosa como un
+      # release interno separado ("source-cache"). El workflow de
+      # respaldo (daily_sync_fallback.yml) descarga esto cuando la PC
+      # esta apagada, en vez de correr etp.exe all/port-translations.
+      # softprops/action-gh-release reemplaza el asset previo solo,
+      # asi que este release siempre tiene "la ultima copia buena".
+      - name: Publish source cache (uso interno, para runs de respaldo)
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: source-cache
+          name: "Snapshot de origen (uso interno, no borrar)"
+          body: "Snapshot valido mas reciente: run ${{ github.run_id }}"
+          prerelease: true
+          make_latest: false
+          files: ${{ vars.ETP_WORK_DIR }}/source_cache.zip

@@ -1,0 +1,108 @@
+name: Daily DQX ES sync (fallback, sin PC)
+
+on:
+  schedule:
+    # Corre un rato despues del workflow principal (daily_sync.yml corre a
+    # las 08:00 UTC). Si el self-hosted ya publico en ese ciclo, este job
+    # se detiene solo (ver "check-if-needed") y no hace nada mas.
+    - cron: "45 8 * * *"
+  workflow_dispatch: {}   # tambien lanzable a mano desde la app de GitHub (Actions -> Run workflow)
+
+permissions:
+  contents: write
+
+jobs:
+  # Si tu PC ya corrio hoy y publico el nightly, no tiene sentido volver a
+  # correr en un runner hosteado -- solo gastariamos minutos gratis y
+  # arriesgariamos pisar un build mas nuevo con uno viejo.
+  check-if-needed:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          UPDATED=$(gh api repos/${{ github.repository }}/releases/tags/nightly --jq .published_at)
+          UPDATED_EPOCH=$(date -d "$UPDATED" +%s)
+          NOW_EPOCH=$(date +%s)
+          DIFF_HOURS=$(( (NOW_EPOCH - UPDATED_EPOCH) / 3600 ))
+          echo "Ultimo nightly publicado hace $DIFF_HOURS horas"
+          if [ "$DIFF_HOURS" -lt 6 ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  fallback-sync:
+    needs: check-if-needed
+    if: needs.check-if-needed.outputs.should_run == 'true'
+    runs-on: windows-latest   # runner gratis de GitHub, no tu PC
+    environment: DATABASE_URL
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --only-binary=:all: psycopg2-binary
+
+      - name: Restaurar etp.exe desde cache (no es un asset publico)
+        uses: actions/cache/restore@v4
+        with:
+          path: cached_etp
+          key: etp-exe-v1
+          fail-on-cache-miss: true   # si esto falla, corre una vez el workflow principal en tu PC para poblar el cache
+
+      - name: Descargar el ultimo snapshot de origen (source-cache)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download source-cache --repo ${{ github.repository }} --pattern "source_cache.zip" --output source_cache.zip
+          Expand-Archive -Path source_cache.zip -DestinationPath source_cache -Force
+        shell: powershell
+
+      - name: Preparar carpeta de trabajo (usando snapshot en vez de PC)
+        shell: powershell
+        run: |
+          $EtpWorkDir = "${{ vars.ETP_WORK_DIR_FALLBACK }}"  # ej: D:\a\dqx-hispano\dqx-hispano\_work
+          New-Item -ItemType Directory -Force -Path $EtpWorkDir | Out-Null
+          Copy-Item source_cache\etp             (Join-Path $EtpWorkDir "etp")             -Recurse -Force
+          Copy-Item source_cache\rps             (Join-Path $EtpWorkDir "rps")             -Recurse -Force
+          New-Item -ItemType Directory -Force -Path (Join-Path $EtpWorkDir "json\_lang") | Out-Null
+          Copy-Item source_cache\json_lang_en    (Join-Path $EtpWorkDir "json\_lang\en")   -Recurse -Force
+
+      - name: Run pipeline (Pasos 3-8, sin etp.exe all / port-translations)
+        shell: powershell
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ETP_EXE_PATH: "${{ github.workspace }}\\cached_etp\\etp.exe"
+          ETP_WORK_DIR: ${{ vars.ETP_WORK_DIR_FALLBACK }}
+          CLARITY_GLOSSARY_DB_PATH: ${{ vars.CLARITY_GLOSSARY_DB_PATH }}
+          CLARITY_DIALOG_DB_PATH: ${{ vars.CLARITY_DIALOG_DB_PATH }}
+        run: ./run_daily_pipeline_fallback.ps1
+
+      - name: Build espanol.clpk from common.zip
+        if: success()
+        shell: powershell
+        run: >
+          python scripts/build_clpk.py "${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/common.zip"
+          --output "${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/espanol.clpk"
+          --author "dqx-hispano"
+          --language es
+          --download-url "https://github.com/${{ github.repository }}/releases/download/nightly/espanol.clpk"
+
+      - name: Publish nightly Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: "Build nocturno (auto-generado, fallback sin PC)"
+          body: "Ultima corrida exitosa (fallback): ${{ github.run_id }}"
+          prerelease: true
+          files: |
+            ${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/espanol.clpk
+            ${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/paste_in_dqxclarity.zip
+            ${{ vars.ETP_WORK_DIR_FALLBACK }}/etp_output/readme.md
