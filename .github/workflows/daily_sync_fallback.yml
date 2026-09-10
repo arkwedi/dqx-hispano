@@ -78,7 +78,7 @@ jobs:
         shell: powershell
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          ETP_EXE_PATH: "${{ github.workspace }}\cached_etp\etp.exe"
+          ETP_EXE_PATH: '${{ github.workspace }}\cached_etp\etp.exe'
           ETP_WORK_DIR: ${{ github.workspace }}\_work_fallback
           CLARITY_GLOSSARY_DB_PATH: ${{ vars.CLARITY_GLOSSARY_DB_PATH }}
           CLARITY_DIALOG_DB_PATH: ${{ vars.CLARITY_DIALOG_DB_PATH }}
