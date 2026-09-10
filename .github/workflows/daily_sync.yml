@@ -17,6 +17,13 @@ jobs:
     runs-on: self-hosted   # your own PC, registered as a runner for this repo
     environment: DATABASE_URL
     steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      # Estos dos pasos van DESPUES del checkout a proposito: actions/checkout
+      # limpia archivos no versionados del workspace, asi que si "cached_etp"
+      # se crea antes, el checkout lo borra sin avisar y actions/cache no
+      # tiene nada que subir al final del job.
       - name: Cache de etp.exe (para el runner de respaldo, NO publico)
         # actions/cache guarda esto dentro de la infraestructura de Actions,
         # no como asset descargable del repo -- evita redistribuir la
@@ -38,9 +45,6 @@ jobs:
           } else {
             Write-Host "etp.exe ya estaba en cache, no se toca"
           }
-
-      - name: Checkout del repositorio
-        uses: actions/checkout@v4
 
       # --- Paso para instalar librerías necesarias de Python ---
       - name: Install Python dependencies
