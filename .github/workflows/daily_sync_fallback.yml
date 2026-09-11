@@ -80,8 +80,11 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ETP_EXE_PATH: '${{ github.workspace }}\cached_etp\etp.exe'
           ETP_WORK_DIR: ${{ github.workspace }}\_work_fallback
-          CLARITY_GLOSSARY_DB_PATH: ${{ vars.CLARITY_GLOSSARY_DB_PATH }}
-          CLARITY_DIALOG_DB_PATH: ${{ vars.CLARITY_DIALOG_DB_PATH }}
+          # CLARITY_GLOSSARY_DB_PATH / CLARITY_DIALOG_DB_PATH NO se pasan aca
+          # a proposito: son la ruta donde TU Clarity local en tu PC lee esos
+          # archivos, no existen en este runner. El script ya salta esa copia
+          # si la variable viene vacia -- las DBs igual quedan generadas en
+          # ETP_WORK_DIR\clarity_dbs y se usan para armar paste_in_dqxclarity.zip.
         run: ./run_daily_pipeline_fallback.ps1
 
       - name: Build espanol.clpk from common.zip
