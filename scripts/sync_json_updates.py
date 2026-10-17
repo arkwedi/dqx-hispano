@@ -44,12 +44,15 @@ and all -- to its new entry_id:
      replace an empty row that a previous sync already inserted at the new
      id (this repairs the damage from a run that happened before this fix).
   3. When the destination id is occupied by another row that isn't moving:
-     an EMPTY row is deleted (nothing is lost, sync regenerates it), a row
-     WITH ES is parked under entry_id '__stale__<id>' instead of deleted,
-     so no translation is ever lost. export_translations.py skips parked
+     an EMPTY row with no entry_history is deleted (nothing is lost, sync
+     regenerates it); a row WITH ES, or with any history, is parked under
+     entry_id '__stale__<id>' instead of deleted, so no translation or
+     history is ever lost. export_translations.py skips parked
      rows. Parked rows can be revived automatically if their text comes
      back, or removed by hand whenever you decide.
-  4. Duplicated JA texts inside a file are paired in numeric entry_id order;
+  4. entry_history (and any other table) must reference entries with
+     ON UPDATE CASCADE, otherwise Postgres refuses to change an entry_id.
+  5. Duplicated JA texts inside a file are paired in numeric entry_id order;
      when the counts don't line up the pair is tagged "(ambiguo)" in the log.
 
 Every move/park/delete is written to a CSV so it can be audited, and
@@ -134,6 +137,24 @@ def fetch_supabase_state(conn):
     return state
 
 
+def fetch_history_keys(conn):
+    """(file, entry_id) pairs that have at least one entry_history row, so
+    displaced rows with history get parked instead of deleted. Uses a
+    savepoint so a missing/different table never aborts the transaction."""
+    keys = set()
+    with conn.cursor() as cur:
+        cur.execute("SAVEPOINT history_keys")
+        try:
+            cur.execute("SELECT DISTINCT file, entry_id FROM entry_history")
+            keys = {(f, i) for f, i in cur.fetchall()}
+            cur.execute("RELEASE SAVEPOINT history_keys")
+        except psycopg2.Error as e:
+            cur.execute("ROLLBACK TO SAVEPOINT history_keys")
+            print(f"  [!] no pude leer entry_history ({e.__class__.__name__}); "
+                  f"se asume sin historial", file=sys.stderr)
+    return keys
+
+
 # ---------------------------------------------------------------------------
 # Re-keying: detect rows whose text moved to another entry_id in the same file
 # ---------------------------------------------------------------------------
@@ -148,13 +169,16 @@ def _has_es(row):
     return bool(row[2] and row[2].strip())
 
 
-def plan_rekeys(local_rows, supabase_state, strict=False):
+def plan_rekeys(local_rows, supabase_state, strict=False, protected_keys=frozenset()):
     """Pure function (no DB access). Decides what to do with rows whose
     entry_id changed. Returns a dict:
 
       moves   : [(file, old_id, new_id, kind)]  re-key a row that has ES
       parked  : [(file, old_id, park_id)]       displaced row WITH ES, renamed away
       deleted : [(file, entry_id)]              displaced row WITHOUT ES, removed
+
+    protected_keys: (file, entry_id) pairs that have history; if displaced
+    they are parked, never deleted, even when their ES is empty.
 
     Terminology, per file:
       placed    = Supabase rows whose (file, entry_id) exists locally with the
@@ -228,7 +252,7 @@ def plan_rekeys(local_rows, supabase_state, strict=False):
         if occupant_key not in supabase_state or occupant_key in moving_from:
             continue
         moving_from.add(occupant_key)
-        if _has_es(supabase_state[occupant_key]):
+        if _has_es(supabase_state[occupant_key]) or occupant_key in protected_keys:
             n = 0
             park_id = f"{PARKED_PREFIX}{new}"
             while (file_key, park_id) in taken:
@@ -271,12 +295,12 @@ def plan_to_report_rows(plan, supabase_state_before):
         ja, en, es = supabase_state_before[(file_key, old)]
         rows.append({"accion": "aparcar", "file": file_key, "entry_id_viejo": old,
                      "entry_id_nuevo": park_id, "ja": ja, "en": en, "es": es,
-                     "detalle": "ocupaba un id que necesita otra fila; tiene ES, no se borra"})
+                     "detalle": "ocupaba un id que necesita otra fila; tiene ES o historial, no se borra"})
     for file_key, entry_id in plan["deleted"]:
         ja, en, es = supabase_state_before[(file_key, entry_id)]
         rows.append({"accion": "borrar", "file": file_key, "entry_id_viejo": entry_id,
                      "entry_id_nuevo": "", "ja": ja, "en": en, "es": es,
-                     "detalle": "fila sin ES que ocupaba un id necesario"})
+                     "detalle": "fila sin ES ni historial que ocupaba un id necesario"})
     return rows
 
 
@@ -372,12 +396,13 @@ def main():
     local_rows = list(read_local_entries(args.sqlite_db))
 
     print("Buscando filas cuyo texto cambio de entry_id dentro del mismo archivo...")
-    plan = plan_rekeys(local_rows, supabase_state, strict=args.strict)
+    history_keys = fetch_history_keys(conn)
+    plan = plan_rekeys(local_rows, supabase_state, strict=args.strict, protected_keys=history_keys)
     rekey_report = plan_to_report_rows(plan, supabase_state)
     n_moves, n_parked, n_deleted = len(plan["moves"]), len(plan["parked"]), len(plan["deleted"])
     n_ambiguous = sum(1 for m in plan["moves"] if "ambiguo" in m[3])
     print(f"  {n_moves} filas a reubicar ({n_ambiguous} ambiguas), "
-          f"{n_parked} desplazadas con ES aparcadas, {n_deleted} desplazadas vacias borradas")
+          f"{n_parked} desplazadas con ES/historial aparcadas, {n_deleted} desplazadas vacias borradas")
     if rekey_report:
         write_rekey_report(args.moves_output, rekey_report)
         print(f"  detalle en {args.moves_output}")
@@ -463,7 +488,7 @@ def main():
 
     print(f"\nFilas reubicadas a su nuevo entry_id (con su ES): {n_moves}")
     if n_parked or n_deleted:
-        print(f"  Desplazadas: {n_parked} con ES aparcadas como '{PARKED_PREFIX}*', {n_deleted} vacias borradas")
+        print(f"  Desplazadas: {n_parked} con ES/historial aparcadas como '{PARKED_PREFIX}*', {n_deleted} vacias borradas")
     print(f"Nuevas entradas insertadas: {len(new_rows)}")
     print(f"Referencias EN actualizadas automaticamente (JA sin cambios): {len(en_updates)}")
     print(f"Entradas sin cambios: {unchanged_count}")
