@@ -71,6 +71,12 @@ except ImportError:
     )
     sys.exit(1)
 
+# Rows that sync_json_updates.py had to "park" because their entry_id was needed
+# by another line (they still hold a translation, so they're kept, not deleted).
+# They don't exist in the game's current data, so they must never be exported.
+# Keep in sync with PARKED_PREFIX in sync_json_updates.py.
+PARKED_PREFIX = "__stale__"
+
 # Tables that only have ja/en -- no dedicated Spanish slot, so we overwrite en.
 # Format: (db_arg_name, table)
 OVERWRITE_EN_TARGETS = [
@@ -205,11 +211,11 @@ def resolve_value(row, lang, use_fallback):
 
 
 def fetch_rows(conn, file_filter=None):
-    sql = "SELECT file, entry_id, ja, en, es FROM entries"
-    params = ()
+    sql = "SELECT file, entry_id, ja, en, es FROM entries WHERE left(entry_id, %s) <> %s"
+    params = (len(PARKED_PREFIX), PARKED_PREFIX)
     if file_filter:
-        sql += " WHERE file = %s"
-        params = (file_filter,)
+        sql += " AND file = %s"
+        params += (file_filter,)
     sql += " ORDER BY file, entry_id"
 
     with conn.cursor() as cur:
