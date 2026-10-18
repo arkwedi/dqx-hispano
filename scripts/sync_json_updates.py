@@ -18,10 +18,11 @@ two are treated differently on purpose:
   in place -- your ES translation and status are left untouched, this just
   keeps the EN reference column current so translators aren't looking at a
   stale typo. These are logged, not flagged for review, since it's routine.
-- Existing entries where ja changed (rare -- means the underlying game
-  content actually changed) are NOT auto-applied. They're written to a
-  review CSV, because this is the case that can genuinely invalidate an
-  existing ES translation.
+- Existing entries where ja changed (means the underlying game content
+  changed) depend on what the old row holds -- see "SLOTS WITH NEW TEXT".
+  The ones that need a human (translated + text similar to the old one,
+  i.e. a typo or number edit) are written to a review CSV, because that
+  is the case that can invalidate an existing ES translation.
 - Unchanged entries are skipped entirely.
 
 RE-KEYING (new): in a big game update the numeric entry_id of a line can
@@ -44,8 +45,8 @@ and all -- to its new entry_id:
      replace an empty row that a previous sync already inserted at the new
      id (this repairs the damage from a run that happened before this fix).
   3. When the destination id is occupied by another row that isn't moving:
-     an EMPTY row with no entry_history is deleted (nothing is lost, sync
-     regenerates it); a row WITH ES, or with any history, is parked under
+     an EMPTY row with no entry_history/proposals is deleted (nothing is lost, sync
+     regenerates it); a row WITH ES, history or proposals is parked under
      entry_id '__stale__<id>' instead of deleted, so no translation or
      history is ever lost. export_translations.py skips parked
      rows. Parked rows can be revived automatically if their text comes
@@ -55,7 +56,22 @@ and all -- to its new entry_id:
   5. Duplicated JA texts inside a file are paired in numeric entry_id order;
      when the counts don't line up the pair is tagged "(ambiguo)" in the log.
 
-Every move/park/delete is written to a CSV so it can be audited, and
+SLOTS WITH NEW TEXT: after the re-keying, an id whose Supabase row still has
+a different ja can't be left alone -- export_translations.py would write the
+old text into a slot the game now uses for something else (e.g. "Nadraga"
+shown where the game now has "Estella"). So:
+  - old row without ES and without history -> its ja/en are overwritten in
+    place (nothing to lose);
+  - old row WITH ES/history and very different text (similarity below
+    --similarity, default 0.5) -> parked as '__stale__<id>', a fresh row is
+    inserted for the new text;
+  - old row WITH ES/history and similar text (typo, a number...) -> left as
+    is and listed in the review CSV (with its ES and a similarity score).
+Rows are matched by (file, ja[, en]) but never keyed by them: the same JA
+line legitimately repeats inside a file (shop dialogue, "yes/no" prompts),
+so (file, ja) is not unique -- (file, entry_id) stays the key.
+
+Every move/park/delete/replace is written to a CSV so it can be audited, and
 --dry-run reports everything without touching Supabase.
 
 PERFORMANCE NOTE: earlier versions of this script ran one SELECT per local
@@ -70,12 +86,14 @@ Usage:
     export DATABASE_URL="postgresql://...supabase connection string..."
     python sync_json_updates.py translations.db
     python sync_json_updates.py translations.db --dry-run
+    python sync_json_updates.py translations.db --similarity 0.6
     python sync_json_updates.py translations.db --review-output changed_2026-08-05.csv
 """
 
 import argparse
 import csv
 import datetime
+import difflib
 import os
 import sqlite3
 import sys
@@ -138,20 +156,32 @@ def fetch_supabase_state(conn):
 
 
 def fetch_history_keys(conn):
-    """(file, entry_id) pairs that have at least one entry_history row, so
-    displaced rows with history get parked instead of deleted. Uses a
-    savepoint so a missing/different table never aborts the transaction."""
+    """(file, entry_id) pairs that carry work beyond the ES text itself:
+    at least one entry_history row, or at least one translation_proposals
+    row (the review queue points at entries by entries.id). Displaced rows
+    in this set get parked instead of deleted/overwritten, so history and
+    pending proposals are never lost. Each query runs under a savepoint so
+    a missing/different table never aborts the transaction."""
+    queries = [
+        ("entry_history", "SELECT DISTINCT file, entry_id FROM entry_history"),
+        ("translation_proposals",
+         "SELECT DISTINCT e.file, e.entry_id FROM translation_proposals p "
+         "JOIN entries e ON e.id = p.entry_ref_id"),
+    ]
     keys = set()
     with conn.cursor() as cur:
-        cur.execute("SAVEPOINT history_keys")
-        try:
-            cur.execute("SELECT DISTINCT file, entry_id FROM entry_history")
-            keys = {(f, i) for f, i in cur.fetchall()}
-            cur.execute("RELEASE SAVEPOINT history_keys")
-        except psycopg2.Error as e:
-            cur.execute("ROLLBACK TO SAVEPOINT history_keys")
-            print(f"  [!] no pude leer entry_history ({e.__class__.__name__}); "
-                  f"se asume sin historial", file=sys.stderr)
+        for name, sql in queries:
+            cur.execute("SAVEPOINT protected_keys")
+            try:
+                cur.execute(sql)
+                found = {(f, i) for f, i in cur.fetchall()}
+                cur.execute("RELEASE SAVEPOINT protected_keys")
+                print(f"  {len(found)} filas con registros en {name} (se protegen)")
+                keys |= found
+            except psycopg2.Error as e:
+                cur.execute("ROLLBACK TO SAVEPOINT protected_keys")
+                print(f"  [!] no pude leer {name} ({e.__class__.__name__}); "
+                      f"se asume sin registros", file=sys.stderr)
     return keys
 
 
@@ -164,30 +194,52 @@ def _id_sort_key(entry_id):
     return (0, int(entry_id), "") if entry_id.isdigit() else (1, 0, entry_id)
 
 
+def similarity(a, b):
+    """0..1 text similarity, used to tell a small edit of the same line
+    (typo, a number, spacing) from a slot that now holds different content."""
+    return difflib.SequenceMatcher(None, a, b, autojunk=False).ratio()
+
+
 def _has_es(row):
     """row = (ja, en, es)"""
     return bool(row[2] and row[2].strip())
 
 
-def plan_rekeys(local_rows, supabase_state, strict=False, protected_keys=frozenset()):
+def _has_work(file_key, entry_id, row, protected_keys):
+    """A row is worth protecting if it has a translation, history or proposals."""
+    return _has_es(row) or (file_key, entry_id) in protected_keys
+
+
+def plan_rekeys(local_rows, supabase_state, strict=False, protected_keys=frozenset(),
+                min_similarity=0.5):
     """Pure function (no DB access). Decides what to do with rows whose
-    entry_id changed. Returns a dict:
+    entry_id changed or whose slot now holds different text. Returns a dict:
 
-      moves   : [(file, old_id, new_id, kind)]  re-key a row that has ES
-      parked  : [(file, old_id, park_id)]       displaced row WITH ES, renamed away
-      deleted : [(file, entry_id)]              displaced row WITHOUT ES, removed
+      moves    : [(file, old_id, new_id, kind)]   re-key a row that has work
+      parked   : [(file, old_id, park_id, why)]   displaced row WITH work, renamed away
+      deleted  : [(file, entry_id)]               displaced row WITHOUT work, removed
+      replaced : [(file, entry_id, ja, en)]       empty row whose slot has new text:
+                                                  ja/en overwritten in place
 
-    protected_keys: (file, entry_id) pairs that have history; if displaced
-    they are parked, never deleted, even when their ES is empty.
+    "work" = a translation (es not empty), any entry_history row or any
+    pending/past proposal (protected_keys). A row with work is never deleted or overwritten.
 
-    Terminology, per file:
-      placed    = Supabase rows whose (file, entry_id) exists locally with the
-                  same ja -> they're where they belong, leave them alone.
-      stale     = every other Supabase row (old id, ja changed, parked...).
-                  Only the ones with ES are worth rescuing ("candidates").
-      slots     = local entries that need a row: id missing in Supabase, id
-                  taken by a row with a different ja, or id already holding
-                  an EMPTY row (e.g. inserted by a previous sync).
+    Stage 1 (re-key): per file,
+      placed     = Supabase rows whose (file, entry_id) exists locally with the
+                   same ja -> already where they belong.
+      candidates = every other row WITH work (old id, ja changed, parked...).
+      slots      = local entries that need a row: id missing in Supabase, id
+                   taken by a row with a different ja, or id holding an EMPTY
+                   row (e.g. inserted by a previous sync).
+      Candidates are matched to slots by (ja, en), then by ja alone.
+    Stage 2 (what's left): any local id whose Supabase row still has a
+      different ja can't keep it -- the exported JSON would write the old
+      text into a slot the game now uses for something else:
+        - row without work        -> ja/en overwritten in place ("replaced")
+        - row with work, text very different (similarity < min_similarity)
+                                  -> parked, a fresh row is inserted
+        - row with work, text similar (typo / number edit)
+                                  -> left alone, goes to the review CSV
     """
     local_by_file = defaultdict(dict)
     for file_key, entry_id, ja, en in local_rows:
@@ -204,14 +256,17 @@ def plan_rekeys(local_rows, supabase_state, strict=False, protected_keys=frozens
         if not supa:
             continue
 
+        def work(i):
+            return _has_work(file_key, i, supa[i], protected_keys)
+
         placed = {i for i, row in supa.items() if i in local and local[i][0] == row[0]}
-        candidates = {i: row for i, row in supa.items() if i not in placed and _has_es(row)}
+        candidates = {i: row for i, row in supa.items() if i not in placed and work(i)}
         if not candidates:
             continue
 
         slots = {}
         for i, (ja, en) in local.items():
-            if i not in supa or i not in placed or not _has_es(supa[i]):
+            if i not in supa or i not in placed or not work(i):
                 slots[i] = (ja, en)
         if not slots:
             continue
@@ -243,45 +298,78 @@ def plan_rekeys(local_rows, supabase_state, strict=False, protected_keys=frozens
                     used_cands.add(cand_id)
 
     # Whoever currently sits in a destination slot (and isn't moving away
-    # itself) has to be displaced: deleted if empty, parked if translated.
+    # itself) has to be displaced: deleted if it has no work, parked if it has.
     moving_from = {(f, old) for f, old, _new, _k in moves}
     taken = set(supabase_state.keys())
     parked, deleted = [], []
+
+    def park_id_for(file_key, entry_id):
+        n = 0
+        park_id = f"{PARKED_PREFIX}{entry_id}"
+        while (file_key, park_id) in taken:
+            n += 1
+            park_id = f"{PARKED_PREFIX}{entry_id}_{n}"
+        taken.add((file_key, park_id))
+        return park_id
+
     for file_key, _old, new, _kind in moves:
         occupant_key = (file_key, new)
         if occupant_key not in supabase_state or occupant_key in moving_from:
             continue
         moving_from.add(occupant_key)
-        if _has_es(supabase_state[occupant_key]) or occupant_key in protected_keys:
-            n = 0
-            park_id = f"{PARKED_PREFIX}{new}"
-            while (file_key, park_id) in taken:
-                n += 1
-                park_id = f"{PARKED_PREFIX}{new}_{n}"
-            taken.add((file_key, park_id))
-            parked.append((file_key, new, park_id))
+        if _has_work(file_key, new, supabase_state[occupant_key], protected_keys):
+            parked.append((file_key, new, park_id_for(file_key, new), "ocupado"))
         else:
             deleted.append((file_key, new))
 
-    return {"moves": moves, "parked": parked, "deleted": deleted}
+    # ---- Stage 2: slots that still hold a different ja after the moves ----
+    post = dict(supabase_state)
+    _apply_structural(post, moves, parked, deleted)
+
+    replaced = []
+    for file_key, entry_id, ja, en in local_rows:
+        key = (file_key, entry_id)
+        row = post.get(key)
+        if row is None or row[0] == ja:
+            continue
+        if not _has_work(file_key, entry_id, row, protected_keys):
+            replaced.append((file_key, entry_id, ja, en))
+        elif similarity(row[0], ja) < min_similarity:
+            parked.append((file_key, entry_id, park_id_for(file_key, entry_id), "contenido distinto"))
+        # else: similar text + work -> stays, reported in the review CSV
+
+    return {"moves": moves, "parked": parked, "deleted": deleted, "replaced": replaced}
 
 
-def apply_plan_to_state(state, plan):
-    """Mirror the plan on the in-memory Supabase snapshot, so the normal
-    new/EN-update/JA-changed comparison that follows sees the post-move world."""
-    for key in plan["deleted"]:
+def _apply_structural(state, moves, parked, deleted):
+    """Deletes, re-keys and parks on a {(file, entry_id): row} dict."""
+    for key in deleted:
         state.pop(key)
 
     relocations = []
-    for file_key, old, new, _kind in plan["moves"]:
+    for file_key, old, new, _kind in moves:
         relocations.append(((file_key, new), state.pop((file_key, old))))
-    for file_key, old, park_id in plan["parked"]:
-        relocations.append(((file_key, park_id), state.pop((file_key, old))))
+    for file_key, old, park_id, _why in parked:
+        if (file_key, old) in state:      # stage-2 parks may target a row already handled
+            relocations.append(((file_key, park_id), state.pop((file_key, old))))
 
     for key, row in relocations:
         if key in state:
             raise RuntimeError(f"Colision inesperada al reubicar filas: {key}")
         state[key] = row
+
+
+def apply_plan_to_state(state, plan):
+    """Mirror the plan on the in-memory Supabase snapshot, so the normal
+    new/EN-update/JA-changed comparison that follows sees the post-plan world."""
+    _apply_structural(state, plan["moves"], plan["parked"], plan["deleted"])
+    for file_key, entry_id, ja, en in plan["replaced"]:
+        _old_ja, _old_en, es = state[(file_key, entry_id)]
+        state[(file_key, entry_id)] = (ja, en, es)
+
+
+def _flat(text, limit=70):
+    return " ".join(str(text).split())[:limit]
 
 
 def plan_to_report_rows(plan, supabase_state_before):
@@ -291,16 +379,23 @@ def plan_to_report_rows(plan, supabase_state_before):
         ja, en, es = supabase_state_before[(file_key, old)]
         rows.append({"accion": "mover", "file": file_key, "entry_id_viejo": old,
                      "entry_id_nuevo": new, "ja": ja, "en": en, "es": es, "detalle": kind})
-    for file_key, old, park_id in plan["parked"]:
+    for file_key, old, park_id, why in plan["parked"]:
         ja, en, es = supabase_state_before[(file_key, old)]
+        detail = ("ocupaba un id que necesita otra fila; tiene ES o historial, no se borra"
+                  if why == "ocupado" else
+                  "el id ahora tiene un texto muy distinto; tiene ES o historial, no se borra")
         rows.append({"accion": "aparcar", "file": file_key, "entry_id_viejo": old,
-                     "entry_id_nuevo": park_id, "ja": ja, "en": en, "es": es,
-                     "detalle": "ocupaba un id que necesita otra fila; tiene ES o historial, no se borra"})
+                     "entry_id_nuevo": park_id, "ja": ja, "en": en, "es": es, "detalle": detail})
     for file_key, entry_id in plan["deleted"]:
         ja, en, es = supabase_state_before[(file_key, entry_id)]
         rows.append({"accion": "borrar", "file": file_key, "entry_id_viejo": entry_id,
                      "entry_id_nuevo": "", "ja": ja, "en": en, "es": es,
                      "detalle": "fila sin ES ni historial que ocupaba un id necesario"})
+    for file_key, entry_id, new_ja, _new_en in plan["replaced"]:
+        ja, en, es = supabase_state_before[(file_key, entry_id)]
+        rows.append({"accion": "reemplazar", "file": file_key, "entry_id_viejo": entry_id,
+                     "entry_id_nuevo": entry_id, "ja": ja, "en": en, "es": es,
+                     "detalle": f"fila sin ES ni historial; JA/EN sobrescritos en sitio con: {_flat(new_ja)}"})
     return rows
 
 
@@ -319,11 +414,13 @@ def _run_batches(cur, sql, rows, expect_rowcount=True):
 
 def apply_plan_to_db(cur, plan):
     """Runs inside the caller's transaction. Order matters:
-      0. delete displaced empty rows (frees their ids)
+      0. delete displaced rows without work (frees their ids)
       A. every moving/parked row goes to a unique temporary or park id
          (this vacates all old ids, so cycles and swaps can't collide
          with the UNIQUE(file, entry_id) constraint)
       B. moving rows go from their temporary id to their final id
+      C. rows without work get their ja/en overwritten in place
+    Renames rely on entry_history's FK being ON UPDATE CASCADE.
     """
     if plan["deleted"]:
         _run_batches(
@@ -335,7 +432,7 @@ def apply_plan_to_db(cur, plan):
 
     move_rows = plan["moves"]
     phase_a = [(f, old, f"{TEMP_PREFIX}{n}") for n, (f, old, _new, _k) in enumerate(move_rows)]
-    phase_a += [(f, old, park_id) for f, old, park_id in plan["parked"]]
+    phase_a += [(f, old, park_id) for f, old, park_id, _why in plan["parked"]]
     phase_b = [(f, f"{TEMP_PREFIX}{n}", new) for n, (f, _old, new, _k) in enumerate(move_rows)]
 
     rename_sql = (
@@ -347,6 +444,15 @@ def apply_plan_to_db(cur, plan):
         _run_batches(cur, rename_sql, phase_a)
     if phase_b:
         _run_batches(cur, rename_sql, phase_b)
+
+    if plan["replaced"]:
+        _run_batches(
+            cur,
+            "UPDATE entries AS e SET ja = v.ja, en = v.en "
+            "FROM (VALUES %s) AS v(file, entry_id, ja, en) "
+            "WHERE e.file = v.file AND e.entry_id = v.entry_id",
+            plan["replaced"],
+        )
 
 
 def write_rekey_report(path, rows):
@@ -369,6 +475,10 @@ def main():
     parser.add_argument("--strict", action="store_true",
                          help="Re-key only when BOTH ja and en match (default also accepts ja alone, in case "
                               "EN was refreshed in the same update)")
+    parser.add_argument("--similarity", type=float, default=0.5,
+                         help="0-1. When a slot now holds different JA text and the old row has a translation: "
+                              "below this similarity the old row is parked and a fresh row is inserted; at or "
+                              "above it (typo / number edit) the row is left for manual review (default: 0.5)")
     parser.add_argument("--dry-run", action="store_true",
                          help="Report everything and write the CSVs, but do NOT modify Supabase")
     args = parser.parse_args()
@@ -397,12 +507,15 @@ def main():
 
     print("Buscando filas cuyo texto cambio de entry_id dentro del mismo archivo...")
     history_keys = fetch_history_keys(conn)
-    plan = plan_rekeys(local_rows, supabase_state, strict=args.strict, protected_keys=history_keys)
+    plan = plan_rekeys(local_rows, supabase_state, strict=args.strict,
+                       protected_keys=history_keys, min_similarity=args.similarity)
     rekey_report = plan_to_report_rows(plan, supabase_state)
     n_moves, n_parked, n_deleted = len(plan["moves"]), len(plan["parked"]), len(plan["deleted"])
+    n_replaced = len(plan["replaced"])
     n_ambiguous = sum(1 for m in plan["moves"] if "ambiguo" in m[3])
     print(f"  {n_moves} filas a reubicar ({n_ambiguous} ambiguas), "
-          f"{n_parked} desplazadas con ES/historial aparcadas, {n_deleted} desplazadas vacias borradas")
+          f"{n_parked} con ES/historial aparcadas, {n_deleted} vacias borradas, "
+          f"{n_replaced} vacias con JA/EN reemplazados en sitio")
     if rekey_report:
         write_rekey_report(args.moves_output, rekey_report)
         print(f"  detalle en {args.moves_output}")
@@ -429,6 +542,7 @@ def main():
                 "file": file_key, "entry_id": entry_id,
                 "ja_old": old_ja, "ja_new": ja,
                 "en_old": old_en, "en_new": en,
+                "es": _old_es, "similitud": f"{similarity(old_ja, ja):.2f}",
             })
         elif old_en != en:
             # Routine: Clarity's daily EN refresh. JA unchanged, so ES
@@ -448,7 +562,8 @@ def main():
         try:
             with conn.cursor() as cur:
                 if rekey_report:
-                    print(f"Reubicando filas ({n_moves} movidas, {n_parked} aparcadas, {n_deleted} borradas)...")
+                    print(f"Reubicando filas ({n_moves} movidas, {n_parked} aparcadas, "
+                          f"{n_deleted} borradas, {n_replaced} reemplazadas)...")
                     apply_plan_to_db(cur, plan)
 
                 if new_rows:
@@ -482,21 +597,25 @@ def main():
     if ja_changed_rows:
         os.makedirs(os.path.dirname(os.path.abspath(args.review_output)), exist_ok=True)
         with open(args.review_output, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=["file", "entry_id", "ja_old", "ja_new", "en_old", "en_new"])
+            writer = csv.DictWriter(f, fieldnames=["file", "entry_id", "ja_old", "ja_new", "en_old", "en_new",
+                                                      "es", "similitud"])
             writer.writeheader()
             writer.writerows(ja_changed_rows)
 
     print(f"\nFilas reubicadas a su nuevo entry_id (con su ES): {n_moves}")
     if n_parked or n_deleted:
         print(f"  Desplazadas: {n_parked} con ES/historial aparcadas como '{PARKED_PREFIX}*', {n_deleted} vacias borradas")
+    if n_replaced:
+        print(f"Filas sin traduccion cuyo id ahora tiene otro texto (JA/EN sobrescritos en sitio): {n_replaced}")
     print(f"Nuevas entradas insertadas: {len(new_rows)}")
     print(f"Referencias EN actualizadas automaticamente (JA sin cambios): {len(en_updates)}")
     print(f"Entradas sin cambios: {unchanged_count}")
-    print(f"Entradas con JA modificado (posible cambio real de contenido): {len(ja_changed_rows)}"
+    print(f"Entradas con JA modificado y traduccion/historial, texto parecido (revisar a mano): {len(ja_changed_rows)}"
           + (f" -- detalle en {args.review_output}" if ja_changed_rows else ""))
     if ja_changed_rows:
         print("Estas NO se tocaron en Supabase -- su ES y estado actual siguen intactos. "
-              "Revisa el CSV y decide manualmente si ameritan re-traduccion.")
+              "Suelen ser correcciones menores (typo, un numero): revisa el CSV (columna 'es') "
+              "y decide si la traduccion sigue valiendo.")
 
 
 if __name__ == "__main__":
